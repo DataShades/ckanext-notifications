@@ -1,0 +1,51 @@
+<div class="noti-card {% if not item.is_read %}is-unread{% endif %}">
+    <div class="noti-checkbox-col">
+        <input type="checkbox" name="notification_ids" value="{{ item.id }}" class="notification-checkbox">
+    </div>
+    
+    {% block notification_item_content %}
+        <div class="noti-content-col">
+            <div class="noti-meta-header">
+                {% if not item.is_read %}
+                    <span class="noti-green-dot"></span>
+                {% endif %}
+                
+                {% set notification_type = item.notification_type %}
+                <span class="noti-badge badge-{{ notification_type }}">{{ notification_type | capitalize }}</span>
+                
+                <span class="noti-time-text" title="{{ h.render_datetime(item.created_at, with_hours=True) }}">
+                    {{ h.time_ago_from_timestamp(item.created_at) }}
+                </span>
+
+                {% if item.source == "email" %}
+                    <span class="ms-2" title="{{ _('Email') }}"><i class="fa fa-envelope"></i></span>
+                {% else %}
+                    <span class="ms-2" title="{{ _('Flash message') }}"><i class="fa fa-message"></i></span>
+                {% endif %}
+            </div>
+            
+            <h3 class="noti-subject-text">{{ item.subject }}</h3>
+            <div class="noti-body-snippet">
+                {{ item.body|safe }}
+            </div>
+        </div>
+    {% endblock %}
+    
+    {% block notification_item_actions %}
+        <div class="noti-row-actions-col">
+            {% if not item.is_read %}
+                <button type="button" class="noti-row-btn" title="{{ _('Mark as read') }}" onclick="executeSingleRowAction('{{ item.id }}', 'read')">
+                    <i class="fa fa-check"></i>
+                </button>
+            {% else %}
+                <button type="button" class="noti-row-btn" title="{{ _('Mark as unread') }}" onclick="executeSingleRowAction('{{ item.id }}', 'unread')">
+                    <i class="fa fa-envelope-open"></i>
+                </button>
+            {% endif %}
+            
+            <button type="button" class="noti-row-btn" title="{{ _('Delete') }}" onclick="executeSingleRowAction('{{ item.id }}', 'delete')">
+                <i class="fa fa-trash"></i>
+            </button>
+        </div>
+    {% endblock %}
+</div>

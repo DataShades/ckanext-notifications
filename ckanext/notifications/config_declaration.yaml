@@ -1,0 +1,76 @@
+version: 1
+groups:
+  - annotation: Notification Center Settings
+    options:
+      - key: ckanext.notifications.email_interception
+        default: true
+        type: bool
+        description: |
+          Enable/disable email interception and storage.
+
+      - key: ckanext.notifications.flash_interception
+        default: true
+        type: bool
+        description: |
+          Enable/disable flash notification interception and storage.
+          
+      - key: ckanext.notifications.dataset_keywords
+        default: dataset package resource
+        type: list
+        description: |
+          List of keywords to scan for in notification text to classify it as dataset-related.
+
+      - key: ckanext.notifications.organization_keywords
+        default: organization organisation
+        type: list
+        description: |
+          List of keywords to scan for in notification text to classify it as organization-related.
+
+      - key: ckanext.notifications.group_keywords
+        default: group
+        type: list
+        description: |
+          List of keywords to scan for in notification text to classify it as group-related.
+
+      - key: ckanext.notifications.dataset_endpoint_startswith
+        default: dataset
+        type: string
+        description: |
+          If notification endpoint starts with this string, it will be classified as dataset-related.
+
+      - key: ckanext.notifications.resource_endpoint_startswith
+        default: resource
+        type: string
+        description: |
+          If notification endpoint starts with this string, it will be classified as dataset-related.
+
+      - key: ckanext.notifications.organization_endpoint_startswith
+        default: organization
+        type: string
+        description: |
+          If notification endpoint starts with this string, it will be classified as organization-related.
+
+      - key: ckanext.notifications.group_endpoint_startswith
+        default: group
+        type: string
+        description: |
+          If notification endpoint starts with this string, it will be classified as group-related.
+
+      - key: ckanext.notifications.notifications_per_page
+        default: 20
+        type: int
+        description: |
+          Maximum number of notifications to display per page.
+
+      - key: ckanext.notifications.max_notifications_per_user
+        default: 1000
+        type: int
+        description: |
+          Maximum number of notifications to keep per user.
+          Older notifications will be automatically deleted.
+          
+      - key: ckanext.notifications.cleanup_days
+        default: 90
+        type: int
+        description: |
+          Number of days to keep notifications before automatic cleanup.

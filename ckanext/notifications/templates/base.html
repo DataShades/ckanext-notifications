@@ -1,0 +1,11 @@
+{% ckan_extends %}
+
+{% block styles %}
+    {{ super() }}
+    {% asset "notifications/notifications-css" %}
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {% asset "notifications/notifications-js" %}
+{% endblock %}

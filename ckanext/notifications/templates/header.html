@@ -1,0 +1,20 @@
+{% ckan_extends %}
+
+{% block header_account_logged %}
+  {# Call our custom template helper function #}
+  {% set unread_count = h.get_unread_notification_count() %}
+  
+  <li class="notifications-nav-item">
+    <a href="{{ h.url_for('notifications.dashboard', user_id=g.userobj.name) }}" class="notifications-nav-item-link" title="{{ _('Notifications') }}" aria-label="{{ _('Notifications') }}">
+      <i class="fa fa-bell" aria-hidden="true"></i>
+      {% if unread_count > 0 %}
+        <span class="badge badge-important">
+          {{ unread_count }}
+        </span>
+      {% endif %}
+    </a>
+  </li>
+
+  {# Carry out the original native account buttons rendering #}
+  {{ super() }}
+{% endblock %}

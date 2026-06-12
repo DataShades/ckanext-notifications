@@ -1,0 +1,13 @@
+{% ckan_extends %}
+
+{% block content_primary_nav %}
+  {{ super() }}
+  
+  {# Append our custom tab to the user profile secondary sub-navigation #}
+  <li class="{% if request.blueprint == 'notifications' %}active{% endif %}">
+    <a href="{{ h.url_for('notifications.dashboard', user_id=user_dict.name) }}">
+      <i class="fa fa-bell" aria-hidden="true"></i>
+      {{ _('Notifications') }}
+    </a>
+  </li>
+{% endblock %}

@@ -1,0 +1,14 @@
+notifications-js:
+  filter: rjsmin
+  output: ckanext-notifications/%(version)s-notifications.js
+  contents:
+    - js/notifications.js
+  extra:
+    preload:
+      - base/main
+
+notifications-css:
+  filter: cssrewrite
+  output: ckanext-notifications/%(version)s-notifications.css
+  contents:
+    - css/notifications.css

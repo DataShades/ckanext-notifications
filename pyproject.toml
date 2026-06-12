@@ -1,0 +1,38 @@
+[project]
+name = "ckanext-notifications"
+version = "0.0.1"
+description = "Collect all user notifications and emails received from CKAN"
+readme = "README.md"
+authors = [
+    {name = "Oleksii Morev", email = "aleksey.morev@linkdigital.com.au"}
+]
+license = {text = "AGPL"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+
+keywords = [ "CKAN", "notification,", "email,", "CKAN,", "user,", "collect", ]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/alexmorev/ckanext-notifications"
+
+[project.entry-points."ckan.plugins"]
+notifications = "ckanext.notifications.plugin:NotificationsPlugin"
+
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+        "ignore::sqlalchemy.exc.SADeprecationWarning",
+        "ignore::sqlalchemy.exc.SAWarning",
+        "ignore::DeprecationWarning",
+]
+addopts = "--ckan-ini test.ini"

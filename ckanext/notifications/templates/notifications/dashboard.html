@@ -1,0 +1,123 @@
+{% extends "user/read_base.html" %}
+
+{% block primary_content_inner %}
+  {% block notifications_center_title %}
+    {% set unread_total = h.get_unread_notification_count() %}
+    <h1 class="notification-center-title">{{ _('Notification center') }} ({{ unread_total }})</h1>
+  {% endblock %}
+
+  <form method="POST" id="bulk-action-form">
+    {% block hidden_inputs %}
+      <input type="hidden" name="action_type" id="bulk_action_type" value="">
+      <input type="hidden" name="type" id="filter_type_input" value="{{ current_filter_type }}">
+      <input type="hidden" name="sort" id="sort_order_input" value="{{ current_sort_order }}">
+      <input type="hidden" name="page" id="page_input" value="{{ current_page }}">
+      <input type="hidden" name="limit" id="limit_input" value="{{ current_limit }}">
+    {% endblock %}
+
+    <div class="noti-toolbar-box">
+      {% block toolbar_box_content %}
+        <div class="row">
+
+          {# Notification Filter control #}
+          <div class="noti-toolbar-filter">
+            {% block toolbar_filter %}
+              <div class="form-inline" id="filter-form">
+                <div class="form-group">
+                  <label for="type">{{ _('Filter') }}</label>
+                  <select name="type" id="type" class="form-control" onchange="submitFilterOrderForm();">
+                    {% block toolbar_filter_options %}
+                      <option value="">{{ _('All') }}</option>
+                      <option value="dataset" {% if current_filter_type == 'dataset' %}selected{% endif %}>{{ _('Dataset') }}</option>
+                      <option value="organization" {% if current_filter_type == 'organization' %}selected{% endif %}>{{ _('Organization') }}</option>
+                      <option value="group" {% if current_filter_type == 'group' %}selected{% endif %}>{{ _('Group') }}</option>
+                      <option value="system" {% if current_filter_type == 'system' %}selected{% endif %}>{{ _('System') }}</option>
+                      <option value="marked_read" {% if current_filter_type == 'marked_read' %}selected{% endif %}>{{ _('Marked Read') }}</option>
+                      <option value="marked_unread" {% if current_filter_type == 'marked_unread' %}selected{% endif %}>{{ _('Marked Unread') }}</option>
+                    {% endblock %}
+                  </select>
+                </div>
+              </div>
+            {% endblock %}
+          </div>
+
+          {# Notification Order control #}
+          <div class="noti-toolbar-orderby">
+            {% block toolbar_orderby %}
+              <div class="form-inline" id="orderby-form">
+                <div class="form-group">
+                  <label for="sort">{{ _('Order') }}</label>
+                  <select name="sort" id="sort" class="form-control" onchange="submitFilterOrderForm();">
+                    {% block toolbar_orderby_options %}
+                      <option value="desc" {% if current_sort_order == 'desc' %}selected{% endif %}>{{ _('Date Descending') }}</option>
+                      <option value="asc" {% if current_sort_order == 'asc' %}selected{% endif %}>{{ _('Date Ascending') }}</option>
+                    {% endblock %}
+                  </select>
+                </div>
+              </div>
+            {% endblock %}
+          </div>
+
+          {# Notification global actions #}
+          <div class="noti-toolbar-actions">
+            {% block toolbar_actions %}
+              <button type="submit" class="btn btn-default" name="action_type" value="mark_all_read">
+                {{ _('Mark all as read') }}
+                <i class="fa fa-check me-1"></i>
+              </button>
+              <button type="submit" class="btn btn-danger" name="action_type" value="delete_all" onclick="return confirm('{{ _('Are you sure you want to delete all notifications?')|e }}');">
+                {{ _('Delete all') }} <i class="fa fa-trash me-1"></i>
+              </button>
+            {% endblock %}
+          </div>
+        </div>
+      {% endblock %}
+    </div>
+
+    {% if notifications %}
+      {# Notification bulk actions #}
+      <div class="noti-bulk-actions-strip">
+        {% block bulk_actions_status %}
+          <input type="checkbox" id="select-all-notifications">
+          <span id="selected-count">0</span> <span>{{ _('selected:') }}</span>
+        {% endblock %}
+        
+        {% block bulk_actions_inner %}
+          <button type="button" class="noti-action-link" onclick="submitBulkAction('read')">
+            {{ _('Mark as read') }}
+            <i class="fa fa-check ms-1"></i>
+          </button>
+          <span>|</span>
+
+          <button type="button" class="noti-action-link" onclick="submitBulkAction('unread')">
+            {{ _('Mark as unread') }}
+            <i class="fa fa-envelope-open ms-1"></i>
+          </button>
+          <span>|</span>
+
+          <button type="button" class="noti-action-link remove" onclick="submitBulkAction('delete')">
+            {{ _('Delete') }}
+            <i class="fa fa-trash ms-1"></i>
+          </button>
+        {% endblock %}
+      </div>
+
+      {# Notification list #}
+      <div class="notifications-list-wrapper">
+        {% block notifications_list %}
+          {% for item in notifications %}
+            {% snippet "notifications/snippets/notification_item.html", item=item %}
+          {% endfor %}
+        {% endblock %}
+      </div>
+
+      {% block page_pagination %}
+        {{ page.pager(type=current_filter_type or '', sort=current_sort_order or 'desc', limit=current_limit) }}
+      {% endblock %}
+    {% else %}
+      <div class="alert alert-info" style="border-radius: 6px; padding: 20px;">
+        {{ _('No notifications available.') }}
+      </div>
+    {% endif %}
+  </form>
+{% endblock %}
