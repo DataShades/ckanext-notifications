@@ -1,5 +1,5 @@
 import logging
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect
 from ckan.plugins import toolkit as tk
 import ckan.model as model
 from ckan.lib.pagination import Page
@@ -68,7 +68,7 @@ def dashboard(user_id):
             'limit': request.form.get('limit', 20),
         }
         redirect_params = {key: value for key, value in redirect_params.items() if value not in (None, '')}
-        return redirect(url_for('notifications.dashboard', user_id=user_id, **redirect_params))
+        return redirect(tk.url_for('notifications.dashboard', user_id=user_id, **redirect_params))
 
     # Extract filter components from active URL request parameters
     filter_type = request.args.get('type', '')
