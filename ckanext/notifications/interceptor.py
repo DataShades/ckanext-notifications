@@ -1,7 +1,9 @@
 import flask
 from flask import has_request_context, session
 
+import html
 import logging
+import re
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, cast
@@ -16,6 +18,47 @@ from ckanext.notifications.model import Notification
 
 log = logging.getLogger(__name__)
 NotificationModel = cast(Any, Notification)
+URL_PATTERN = re.compile(r'https?://[^\s<>"\']+', flags=re.IGNORECASE)
+
+
+def _format_email_body_for_notification(body, body_html):
+    """
+    Return HTML content suitable for notification rendering.
+    - Use existing HTML email body when available.
+    - Otherwise escape text, linkify plain URLs and preserve line breaks.
+    """
+    if body_html:
+        return str(body_html)
+
+    text = str(body or '')
+    if not text:
+        return ''
+
+    chunks = []
+    cursor = 0
+
+    for match in URL_PATTERN.finditer(text):
+        start, end = match.span()
+        raw_url = match.group(0)
+        trimmed_url = raw_url.rstrip('.,);]')
+        trailing = raw_url[len(trimmed_url):]
+
+        chunks.append(html.escape(text[cursor:start]))
+
+        if trimmed_url:
+            href = html.escape(trimmed_url, quote=True)
+            label = html.escape(trimmed_url)
+            chunks.append(
+                f'<a href="{href}" target="_blank" rel="noopener noreferrer">{label}</a>'
+            )
+
+        if trailing:
+            chunks.append(html.escape(trailing))
+
+        cursor = end
+
+    chunks.append(html.escape(text[cursor:]))
+    return ''.join(chunks).replace('\n', '<br>')
 
 
 def _cleanup_notifications_for_user(user_id):
@@ -220,10 +263,9 @@ def patch_ckan_mailer():
             # Locate the CKAN User ID matching the recipient email address
             user = model.Session.query(model.User).filter(model.User.email == recipient_email).first()
             if user:
-                # Convert plain text newlines to HTML line breaks for uniform rendering later
                 rendered_body = body_html if body_html else body
                 rendered_body_text = str(rendered_body)
-                formatted_body = rendered_body_text.replace("\n", "<br>")
+                formatted_body = _format_email_body_for_notification(body, body_html)
                 endpoint = tk.request.endpoint if has_request_context() else None
                 notification_type = classify_notification_type(
                     subject=subject,

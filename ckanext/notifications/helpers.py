@@ -34,5 +34,5 @@ def get_unread_count_for_current_user():
 
 def get_helpers():
     return {
-        'get_unread_notification_count': get_unread_count_for_current_user
+        'get_unread_notification_count': get_unread_count_for_current_user,
     }

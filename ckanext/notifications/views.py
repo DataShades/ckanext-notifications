@@ -41,7 +41,8 @@ def dashboard(user_id):
         return tk.abort(403, 'Unauthorized to view this dashboard.')
 
     if request.method == 'POST':
-        action_type = request.form.get('action_type')
+        action_type_values = request.form.getlist('action_type')
+        action_type = action_type_values[-1] if action_type_values else request.form.get('bulk_action_type')
         selected_ids = request.form.getlist('notification_ids')
         
         try:
