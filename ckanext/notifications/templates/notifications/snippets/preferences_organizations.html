@@ -1,0 +1,28 @@
+<h2>{{ _('Organization preferences') }}</h2>
+<p class="text-muted">{{ _('You may receive notifications when an organization is updated, such as when its description is changed, a new dataset is added, or a new article is published.') }}</p>
+<div class="module-content" id="notifications-organization-preferences">
+  <div class="well notifications-pref-card">
+    {% if organizations %}
+      {% for organization in organizations %}
+        <div class="notifications-pref-item">
+          <div class="notifications-pref-head">
+            <div>
+              <h3>{{ organization.title }}</h3>
+              {% if organization.description %}
+                <p class="text-muted">{{ h.markdown_extract(organization.description, extract_length=180) }}</p>
+              {% endif %}
+            </div>
+            {{ pref_switch('org_enabled__' ~ organization.id, organization.preference.enabled, _('Organization notifications enabled')) }}
+          </div>
+          <div class="notifications-pref-channels">
+            {{ channel_badge('org_email__' ~ organization.id, organization.preference.email_enabled, _('Email')) }}
+            {{ channel_badge('org_in_app__' ~ organization.id, organization.preference.in_app_enabled, _('Notification center')) }}
+          </div>
+        </div>
+        {% if not loop.last %}<hr>{% endif %}
+      {% endfor %}
+    {% else %}
+      <p>{{ _('You are not a member of any organization.') }}</p>
+    {% endif %}
+  </div>
+</div>

@@ -19,3 +19,11 @@ def notification_modify_auth(context, data_dict):
     """Ensures users can only update or purge records that explicitly belong to them."""
     # Reuse identical checking restrictions as listing actions
     return notification_list_auth(context, data_dict)
+
+
+def notification_preferences_show_auth(context, data_dict):
+    return notification_list_auth(context, data_dict)
+
+
+def notification_preferences_update_auth(context, data_dict):
+    return notification_list_auth(context, data_dict)

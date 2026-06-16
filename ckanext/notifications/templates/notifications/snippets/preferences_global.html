@@ -1,0 +1,27 @@
+<h2>{{ _('Global preferences') }}</h2>
+<p class="text-muted">{{ _('Manage your global notification preferences.') }}</p>
+<div class="module-content">
+  <div class="well notifications-pref-card">
+    <div class="notifications-pref-item">
+      <div class="notifications-pref-head">
+        <div>
+          <h3>{{ _('Disable all notifications') }}</h3>
+          <p class="text-muted">{{ _('You will no longer receive any notifications. This includes general notifications, organization updates, and alerts for all the datasets you track. Mandatory messages (e.g., related to security, privacy, and important account changes) will still be sent.') }}</p>
+        </div>
+        {{ pref_switch('global_enabled', global_settings.enabled, _('Global notifications enabled')) }}
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="notifications-pref-item">
+      <div class="notifications-pref-head">
+        <div>
+          <h3>{{ _('Mandatory system notifications') }}</h3>
+          <p class="text-muted">{{ _('The mandatory system notifications cannot be disabled by regular users. They include, in particular, password changes and security alerts that directly affect you.') }}</p>
+        </div>
+        {{ pref_switch('mandatory_enabled', mandatory_system.enabled, _('Mandatory system notifications enabled'), not can_edit_mandatory) }}
+      </div>
+    </div>
+  </div>
+</div>

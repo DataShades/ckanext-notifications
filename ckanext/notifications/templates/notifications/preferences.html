@@ -1,0 +1,43 @@
+{% extends "user/read_base.html" %}
+
+{% macro pref_switch(name, checked, label, disabled=false) %}
+  <label class="notifications-switch">
+    <input type="checkbox" name="{{ name }}" value="1" aria-label="{{ label }}" {% if checked %}checked{% endif %} {% if disabled %}disabled{% endif %}>
+    <span class="notifications-switch-slider" aria-hidden="true"></span>
+  </label>
+{% endmacro %}
+
+{% macro channel_badge(name, checked, label, disabled=false) %}
+  <label class="notifications-channel-badge {% if disabled %}is-disabled{% endif %}">
+    <input type="checkbox" name="{{ name }}" value="1" {% if checked %}checked{% endif %} {% if disabled %}disabled{% endif %}>
+    <span>{{ label }}</span>
+  </label>
+{% endmacro %}
+
+{% block primary_content_inner %}
+  <h1>{{ _('Notification preferences') }}</h1>
+
+  <form method="post" action="" class="notifications-preferences-form">
+    {{ h.csrf_input() }}
+
+    {% snippet 'notifications/snippets/preferences_global.html',
+      global_settings=preferences_data.global_settings,
+      mandatory_system=preferences_data.mandatory_system,
+      can_edit_mandatory=can_edit_mandatory,
+      pref_switch=pref_switch %}
+
+    {% snippet 'notifications/snippets/preferences_organizations.html',
+      organizations=preferences_data.organizations,
+      pref_switch=pref_switch,
+      channel_badge=channel_badge %}
+
+    {% snippet 'notifications/snippets/preferences_datasets.html',
+      dataset_groups=preferences_data.dataset_groups,
+      pref_switch=pref_switch,
+      channel_badge=channel_badge %}
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">{{ _('Save preferences') }}</button>
+    </div>
+  </form>
+{% endblock %}

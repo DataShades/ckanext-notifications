@@ -42,8 +42,209 @@ document.addEventListener("DOMContentLoaded", function() {
       updateSelectedCount();
     });
   });
+
+  // Organization and Dataset preferences interactions
+  function syncDatasetChannels(datasetId, enabled) {
+    var email = document.querySelector('input[name="dataset_email__' + datasetId + '"]');
+    var inApp = document.querySelector('input[name="dataset_in_app__' + datasetId + '"]');
+    if (email) {
+      email.checked = enabled;
+    }
+    if (inApp) {
+      inApp.checked = enabled;
+    }
+  }
+
+  function syncDatasetToggleFromChannels(datasetId) {
+    var datasetToggle = document.querySelector('input[name="dataset_enabled__' + datasetId + '"]');
+    var email = document.querySelector('input[name="dataset_email__' + datasetId + '"]');
+    var inApp = document.querySelector('input[name="dataset_in_app__' + datasetId + '"]');
+    if (!datasetToggle || !email || !inApp) {
+      return;
+    }
+
+    datasetToggle.checked = email.checked || inApp.checked;
+  }
+
+  function ensureOrganizationToggleEnabled(orgId) {
+    if (!orgId) {
+      return;
+    }
+
+    var orgToggle = document.querySelector('#notifications-organization-preferences input[name="org_enabled__' + orgId + '"]');
+    if (!orgToggle || orgToggle.checked) {
+      return;
+    }
+
+    orgToggle.checked = true;
+    orgToggle.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function syncDatasetOrgBulkFromDatasets(orgId) {
+    if (!orgId) {
+      return;
+    }
+
+    var datasetCard = document.querySelector('#notifications-dataset-preferences .notifications-dataset-org-card[data-org-id="' + orgId + '"]');
+    if (!datasetCard) {
+      return;
+    }
+
+    var datasetToggles = datasetCard.querySelectorAll('input[name^="dataset_enabled__"]');
+    var anyEnabled = false;
+    datasetToggles.forEach(function(toggle) {
+      if (toggle.checked) {
+        anyEnabled = true;
+      }
+    });
+
+    var bulkToggle = datasetCard.querySelector('.dataset-org-bulk-toggle');
+    if (bulkToggle) {
+      bulkToggle.checked = anyEnabled;
+    }
+
+    if (anyEnabled) {
+      ensureOrganizationToggleEnabled(orgId);
+    }
+  }
+
+  var datasetEnabled = document.querySelectorAll('input[name^="dataset_enabled__"]');
+  datasetEnabled.forEach(function(toggle) {
+    toggle.addEventListener('change', function() {
+      var datasetId = toggle.name.replace('dataset_enabled__', '');
+      syncDatasetChannels(datasetId, toggle.checked);
+      var datasetItem = toggle.closest('.notifications-dataset-item');
+      var orgId = datasetItem && datasetItem.getAttribute('data-org-id');
+      syncDatasetOrgBulkFromDatasets(orgId);
+    });
+  });
+
+  var datasetChannelInputs = document.querySelectorAll('input[name^="dataset_email__"], input[name^="dataset_in_app__"]');
+  datasetChannelInputs.forEach(function(channelInput) {
+    channelInput.addEventListener('change', function() {
+      var datasetId = channelInput.name
+        .replace('dataset_email__', '')
+        .replace('dataset_in_app__', '');
+      syncDatasetToggleFromChannels(datasetId);
+
+      var datasetToggle = document.querySelector('input[name="dataset_enabled__' + datasetId + '"]');
+      if (datasetToggle) {
+        var datasetItem = datasetToggle.closest('.notifications-dataset-item');
+        var orgId = datasetItem && datasetItem.getAttribute('data-org-id');
+        syncDatasetOrgBulkFromDatasets(orgId);
+      }
+    });
+  });
+
+  datasetEnabled.forEach(function(toggle) {
+    var datasetId = toggle.name.replace('dataset_enabled__', '');
+    syncDatasetToggleFromChannels(datasetId);
+  });
+
+  var datasetOrgBulkToggles = document.querySelectorAll('#notifications-dataset-preferences .dataset-org-bulk-toggle');
+  datasetOrgBulkToggles.forEach(function(bulkToggle) {
+    bulkToggle.addEventListener('change', function() {
+      var card = bulkToggle.closest('.notifications-dataset-org-card');
+      if (!card) {
+        return;
+      }
+
+      var datasetToggles = card.querySelectorAll('input[name^="dataset_enabled__"]');
+      datasetToggles.forEach(function(datasetToggle) {
+        datasetToggle.checked = bulkToggle.checked;
+        var datasetId = datasetToggle.name.replace('dataset_enabled__', '');
+        syncDatasetChannels(datasetId, bulkToggle.checked);
+      });
+
+      if (bulkToggle.checked) {
+        ensureOrganizationToggleEnabled(card.getAttribute('data-org-id'));
+      }
+    });
+  });
+
+  var orgPreferencesEnabled = document.querySelectorAll('#notifications-organization-preferences input[name^="org_enabled__"]');
+
+  function setDatasetCardState(datasetCard, enabled, clearWhenDisabling) {
+    if (!datasetCard) {
+      return;
+    }
+
+    var datasetBulkToggle = datasetCard.querySelector('.dataset-org-bulk-toggle');
+    var datasetEnabledInputs = datasetCard.querySelectorAll('input[name^="dataset_enabled__"]');
+    var datasetChannels = datasetCard.querySelectorAll('input[name^="dataset_email__"], input[name^="dataset_in_app__"]');
+    var datasetPresence = datasetCard.querySelectorAll('.dataset-present-input');
+
+    if (enabled) {
+      datasetCard.style.display = '';
+      if (datasetBulkToggle) {
+        datasetBulkToggle.disabled = false;
+      }
+      datasetEnabledInputs.forEach(function(input) { input.disabled = false; });
+      datasetChannels.forEach(function(input) { input.disabled = false; });
+      datasetPresence.forEach(function(input) { input.disabled = false; });
+      return;
+    }
+
+    datasetCard.style.display = 'none';
+    if (datasetBulkToggle) {
+      datasetBulkToggle.disabled = true;
+      if (clearWhenDisabling) {
+        datasetBulkToggle.checked = false;
+      }
+    }
+
+    datasetEnabledInputs.forEach(function(input) {
+      input.disabled = true;
+      if (clearWhenDisabling) {
+        input.checked = false;
+      }
+    });
+    datasetChannels.forEach(function(input) {
+      input.disabled = true;
+      if (clearWhenDisabling) {
+        input.checked = false;
+      }
+    });
+    datasetPresence.forEach(function(input) { input.disabled = true; });
+  }
+
+  orgPreferencesEnabled.forEach(function(orgToggle) {
+    orgToggle.addEventListener('change', function() {
+      var orgId = orgToggle.name.replace('org_enabled__', '');
+      var email = document.querySelector('#notifications-organization-preferences input[name="org_email__' + orgId + '"]');
+      var inApp = document.querySelector('#notifications-organization-preferences input[name="org_in_app__' + orgId + '"]');
+      var datasetCard = document.querySelector('#notifications-dataset-preferences .notifications-dataset-org-card[data-org-id="' + orgId + '"]');
+
+      if (email) {
+        email.checked = orgToggle.checked;
+      }
+      if (inApp) {
+        inApp.checked = orgToggle.checked;
+      }
+
+      if (datasetCard) {
+        setDatasetCardState(datasetCard, orgToggle.checked, !orgToggle.checked);
+      }
+    });
+  });
+
+  orgPreferencesEnabled.forEach(function(orgToggle) {
+    var orgId = orgToggle.name.replace('org_enabled__', '');
+    var datasetCard = document.querySelector('#notifications-dataset-preferences .notifications-dataset-org-card[data-org-id="' + orgId + '"]');
+    setDatasetCardState(datasetCard, orgToggle.checked, false);
+  });
+
+  datasetOrgBulkToggles.forEach(function(bulkToggle) {
+    var card = bulkToggle.closest('.notifications-dataset-org-card');
+    if (!card) {
+      return;
+    }
+    syncDatasetOrgBulkFromDatasets(card.getAttribute('data-org-id'));
+  });
 });
 
+
+// Submits the bulk action form with the specified action key
 function submitBulkForm(actionKey) {
   var form = document.getElementById('bulk-action-form');
   if (!form) {
@@ -54,6 +255,8 @@ function submitBulkForm(actionKey) {
   form.submit();
 }
 
+
+// Submits the filter and sort form with the current selections
 function submitFilterOrderForm() {
   var form = document.getElementById('bulk-action-form');
   var filterSelect = document.getElementById('type');

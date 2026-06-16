@@ -1,0 +1,55 @@
+<h2>{{ _('Dataset preferences') }}</h2>
+<p class="text-muted">{{ _('You may receive notifications when a dataset you follow is updated, including when metadata is modified, a resource is added or updated, or access is changed.') }}</p>
+<div class="module-content" id="notifications-dataset-preferences">
+  {% if dataset_groups %}
+    {% for group in dataset_groups %}
+      {% set org_enabled = group.organization_preference.enabled %}
+      {% set collapse_id = 'dataset-org-collapse-' ~ loop.index %}
+      <div class="well notifications-pref-card notifications-dataset-org-card" data-org-id="{{ group.organization.id }}"{% if not org_enabled %} style="display: none;"{% endif %}>
+        <div class="notifications-dataset-org-head">
+          <div class="notifications-dataset-org-title">
+            <h3>{{ group.organization.title }}</h3>
+            <label class="notifications-switch">
+              <input type="checkbox" class="dataset-org-bulk-toggle" name="dataset_org_enabled__{{ group.organization.id }}" value="1" aria-label="{{ _('Toggle all datasets in organization') }}" {% if group.preference.enabled %}checked{% endif %}>
+              <span class="notifications-switch-slider" aria-hidden="true"></span>
+            </label>
+          </div>
+          <button class="notifications-accordion-toggle {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#{{ collapse_id }}" aria-expanded="{{ 'true' if loop.first else 'false' }}" aria-controls="{{ collapse_id }}">
+            <i class="fa fa-chevron-down" aria-hidden="true"></i>
+            <span class="sr-only">{{ _('Toggle organization datasets') }}</span>
+          </button>
+        </div>
+
+        <div id="{{ collapse_id }}" class="collapse {% if loop.first %}show{% endif %}">
+          {% for dataset in group.datasets %}
+            <div class="notifications-pref-item notifications-dataset-item" data-org-id="{{ group.organization.id }}">
+              <input type="hidden" class="dataset-present-input" name="dataset_present__{{ dataset.id }}" value="1">
+              <div class="notifications-pref-head">
+                <div>
+                  <h4>{{ dataset.title }}</h4>
+                  {% if dataset.notes %}
+                    <p class="text-muted">{{ h.markdown_extract(dataset.notes, extract_length=180) }}</p>
+                  {% endif %}
+                </div>
+                {{ pref_switch('dataset_enabled__' ~ dataset.id, dataset.preference.enabled, _('Dataset notifications enabled')) }}
+              </div>
+              <div class="notifications-pref-channels">
+                {{ channel_badge('dataset_email__' ~ dataset.id, dataset.preference.email_enabled, _('Email')) }}
+                {{ channel_badge('dataset_in_app__' ~ dataset.id, dataset.preference.in_app_enabled, _('Notification center')) }}
+              </div>
+            </div>
+            {% if not loop.last %}<hr>{% endif %}
+          {% else %}
+            <div class="notifications-pref-item">
+              <p>{{ _('No followed datasets in this organization.') }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="well notifications-pref-card">
+      <p>{{ _('You are not following any datasets.') }}</p>
+    </div>
+  {% endif %}
+</div>

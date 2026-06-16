@@ -1,3 +1,4 @@
 from .notification import Notification
+from .preference import NotificationPreference
 
-__all__ = ["Notification"]
+__all__ = ["Notification", "NotificationPreference"]

@@ -3,11 +3,17 @@
 {% block content_primary_nav %}
   {{ super() }}
   
-  {# Append our custom tab to the user profile secondary sub-navigation #}
-  <li class="{% if request.blueprint == 'notifications' %}active{% endif %}">
+  {# Append our custom tabs to the user profile secondary sub-navigation #}
+  <li class="{% if request.blueprint == 'notifications' and request.endpoint == 'notifications.dashboard' %}active{% endif %}">
     <a href="{{ h.url_for('notifications.dashboard', user_id=user_dict.name) }}">
       <i class="fa fa-bell" aria-hidden="true"></i>
       {{ _('Notifications') }}
+    </a>
+  </li>
+  <li class="{% if request.endpoint == 'notifications.preferences' %}active{% endif %}">
+    <a href="{{ h.url_for('notifications.preferences', user_id=user_dict.name) }}">
+      <i class="fa fa-sliders" aria-hidden="true"></i>
+      {{ _('Notification preferences') }}
     </a>
   </li>
 {% endblock %}
