@@ -19,8 +19,10 @@
 
                 {% if item.source == "email" %}
                     <span class="ms-2" title="{{ _('Email') }}"><i class="fa fa-envelope"></i></span>
-                {% else %}
+                {% elif item.source == "flash" %}
                     <span class="ms-2" title="{{ _('Flash message') }}"><i class="fa fa-message"></i></span>
+                {% else %}
+                    <span class="ms-2" title="{{ _('Activity') }}"><i class="fa fa-bell"></i></span>
                 {% endif %}
             </div>
             

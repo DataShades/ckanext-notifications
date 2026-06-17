@@ -7,6 +7,7 @@ import ckan.plugins.toolkit as tk
 
 NOTIFICATIONS_EMAIL_INTERCEPTION = "ckanext.notifications.email_interception"
 NOTIFICATIONS_FLASH_INTERCEPTION = "ckanext.notifications.flash_interception"
+NOTIFICATIONS_ACTIVITY_INTERCEPTION = "ckanext.notifications.activity_interception"
 NOTIFICATIONS_DATASET_KEYWORDS = "ckanext.notifications.dataset_keywords"
 NOTIFICATIONS_ORGANIZATION_KEYWORDS = "ckanext.notifications.organization_keywords"
 NOTIFICATIONS_GROUP_KEYWORDS = "ckanext.notifications.group_keywords"
@@ -20,6 +21,7 @@ NOTIFICATIONS_CLEANUP_DAYS = "ckanext.notifications.cleanup_days"
 
 NOTIFICATIONS_DEFAULT_EMAIL_INTERCEPTION = True
 NOTIFICATIONS_DEFAULT_FLASH_INTERCEPTION = True
+NOTIFICATIONS_DEFAULT_ACTIVITY_INTERCEPTION = False
 NOTIFICATIONS_DEFAULT_DATASET_KEYWORDS = "dataset package resource"
 NOTIFICATIONS_DEFAULT_ORGANIZATION_KEYWORDS = "organization organisation"
 NOTIFICATIONS_DEFAULT_GROUP_KEYWORDS = "group"
@@ -64,6 +66,15 @@ def notifications_get_flash_interception() -> bool:
 		tk.config.get(
 			NOTIFICATIONS_FLASH_INTERCEPTION,
 			NOTIFICATIONS_DEFAULT_FLASH_INTERCEPTION,
+		)
+	)
+
+
+def notifications_get_activity_interception() -> bool:
+	return tk.asbool(
+		tk.config.get(
+			NOTIFICATIONS_ACTIVITY_INTERCEPTION,
+			NOTIFICATIONS_DEFAULT_ACTIVITY_INTERCEPTION,
 		)
 	)
 

@@ -13,6 +13,15 @@ groups:
         type: bool
         description: |
           Enable/disable flash notification interception and storage.
+
+      - key: ckanext.notifications.activity_interception
+        default: false
+        type: bool
+        description: |
+          Enable/disable activity stream interception and storage.
+          It is required to enable this to generate notifications based on CKAN activities
+          and enable the additional functionality to Notification preferences 
+          related to organization and dataset notifications.
           
       - key: ckanext.notifications.dataset_keywords
         default: dataset package resource

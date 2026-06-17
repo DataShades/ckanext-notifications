@@ -4,6 +4,8 @@ import ckan.model as model
 from ckan.plugins import toolkit as tk
 from ckan.types import Context
 
+from ckanext.notifications.config import notifications_get_activity_interception
+
 log = logging.getLogger(__name__)
 
 def get_unread_count_for_current_user():
@@ -32,7 +34,17 @@ def get_unread_count_for_current_user():
         return 0
 
 
+def activity_interception_enabled():
+    """
+    Check if activity interception is enabled.
+    
+    Used in templates to conditionally show activity-related notification preferences.
+    """
+    return notifications_get_activity_interception()
+
+
 def get_helpers():
     return {
         'get_unread_notification_count': get_unread_count_for_current_user,
+        'activity_interception_enabled': activity_interception_enabled,
     }

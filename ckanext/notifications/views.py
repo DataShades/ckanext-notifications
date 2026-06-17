@@ -18,6 +18,13 @@ def _get_user_or_404(user_id):
         return tk.abort(404, 'User account not found.')
     return user
 
+
+def _is_checked(data, key):
+    values = data.getlist(key)
+    if not values:
+        return False
+    return any(value in ('1', 'true', 'True', 'on', 'yes') for value in values)
+
 @notifications_blueprint.route('/user/<user_id>/notifications', methods=['GET', 'POST'])
 def dashboard(user_id):
     """
@@ -107,6 +114,101 @@ def dashboard(user_id):
     }
     
     return render_template('notifications/dashboard.html', **extra_vars)
+
+
+@notifications_blueprint.route('/user/<user_id>/notification-preferences', methods=['GET', 'POST'])
+def preferences(user_id):
+    user_obj = _get_user_or_404(user_id)
+
+    context: Context = {
+        'model': model,
+        'session': model.Session,
+        'user': tk.c.user or tk.c.author,
+        'auth_user_obj': tk.c.userobj
+    }
+
+    try:
+        tk.check_access('notification_preferences_show_auth', context, {'user_id': user_obj.id})
+    except tk.NotAuthorized:
+        return tk.abort(403, tk._('You are not authorized to manage these notification preferences.'))
+
+    user_id_db = user_obj.id
+
+    if request.method == 'POST':
+        existing = tk.get_action('notification_preferences_show')(context, {'user_id': user_id_db})
+
+        org_has_enabled_dataset = set()
+        for group in existing.get('dataset_groups', []):
+            org_id = group['organization']['id']
+            for dataset in group.get('datasets', []):
+                dataset_id = dataset['id']
+                if _is_checked(request.form, f'dataset_enabled__{dataset_id}'):
+                    org_has_enabled_dataset.add(org_id)
+                    break
+
+        organizations_payload = []
+        for organization in existing.get('organizations', []):
+            org_id = organization['id']
+            organizations_payload.append({
+                'id': org_id,
+                'enabled': (
+                    _is_checked(request.form, f'org_enabled__{org_id}')
+                    or org_id in org_has_enabled_dataset
+                ),
+                'email_enabled': _is_checked(request.form, f'org_email__{org_id}'),
+                'in_app_enabled': _is_checked(request.form, f'org_in_app__{org_id}'),
+            })
+
+        dataset_organizations_payload = []
+        for group in existing.get('dataset_groups', []):
+            org_id = group['organization']['id']
+            dataset_organizations_payload.append({
+                'id': org_id,
+                'enabled': (
+                    _is_checked(request.form, f'dataset_org_enabled__{org_id}')
+                    or org_id in org_has_enabled_dataset
+                ),
+            })
+
+        datasets_payload = []
+        for group in existing.get('dataset_groups', []):
+            for dataset in group.get('datasets', []):
+                dataset_id = dataset['id']
+
+                if not _is_checked(request.form, f'dataset_present__{dataset_id}'):
+                    continue
+
+                datasets_payload.append({
+                    'id': dataset_id,
+                    'enabled': _is_checked(request.form, f'dataset_enabled__{dataset_id}'),
+                    'email_enabled': _is_checked(request.form, f'dataset_email__{dataset_id}'),
+                    'in_app_enabled': _is_checked(request.form, f'dataset_in_app__{dataset_id}'),
+                })
+
+        tk.get_action('notification_preferences_update')(context, {
+            'user_id': user_id_db,
+            'global_settings': {
+                'enabled': _is_checked(request.form, 'global_enabled'),
+            },
+            'mandatory_system': {
+                'enabled': _is_checked(request.form, 'mandatory_enabled'),
+            },
+            'organizations': organizations_payload,
+            'dataset_organizations': dataset_organizations_payload,
+            'datasets': datasets_payload,
+        })
+        tk.h.flash_success(tk._('Notification preferences updated'))
+        return redirect(tk.url_for('notifications.preferences', user_id=user_obj.name))
+
+    preferences_data = tk.get_action('notification_preferences_show')(context, {'user_id': user_id_db})
+    user_dict = tk.get_action('user_show')(context, {'id': user_id_db})
+
+    return render_template(
+        'notifications/preferences.html',
+        user_dict=user_dict,
+        preferences_data=preferences_data,
+        can_edit_mandatory=bool(tk.c.userobj and tk.c.userobj.sysadmin),
+    )
 
 
 def get_blueprints():

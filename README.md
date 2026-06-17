@@ -3,12 +3,14 @@
 
 # ckanext-notifications
 
-A CKAN extension that provides a centralized notification center for users, intercepting and storing email and flash messages for easy access and management. This extension enables organizations to maintain a complete audit trail of user notifications while providing a unified dashboard for notification management.
+A CKAN extension that provides a centralized notification center for users, intercepting and storing email, flash messages, and activity-driven notifications for easy access and management. This extension enables organizations to maintain a complete audit trail of user notifications while providing a unified dashboard for notification management.
 
 ## Features
 
 - **Email Interception**: Automatically capture and store email messages sent to users
 - **Flash Message Interception**: Intercept CKAN flash notifications for archival
+- **Activity Interception**: Intercept CKAN activity stream events and create in-app/email notifications
+- **Notification Preferences**: Control global, organization, and dataset notifications per channel (Email / Notification center)
 - **Notification Classification**: Intelligent categorization based on endpoint and content keywords
 - **Notification Dashboard**: User-friendly interface to view and manage notifications
 - **Batch Operations**: Mark as read/unread or delete notifications in bulk
@@ -87,7 +89,7 @@ Before installing, ensure you have:
 
 All configuration options are optional and use sensible defaults. Add these settings to your CKAN configuration file to customize the behavior.
 
-### Email and Flash Interception
+### Email, Flash, and Activity Interception
 
 #### `ckanext.notifications.email_interception`
 
@@ -109,6 +111,17 @@ ckanext.notifications.email_interception = false
 ```ini
 # Example: Disable flash message interception
 ckanext.notifications.flash_interception = false
+```
+
+#### `ckanext.notifications.activity_interception`
+
+**Type**: Boolean  
+**Default**: `false`  
+**Description**: Enable or disable interception of CKAN activity stream events (used by `intercept_activity`). It is required to enable this to generate notifications based on CKAN activities and enable the additional functionality to Notification preferences related to organization and dataset notifications.
+
+```ini
+# Example: Disable activity interception
+ckanext.notifications.activity_interception = false
 ```
 
 ### Content Classification
@@ -234,6 +247,7 @@ Add this to your CKAN configuration file for full customization:
 # Notification center configuration
 ckanext.notifications.email_interception = true
 ckanext.notifications.flash_interception = true
+ckanext.notifications.activity_interception = true
 
 # Content classification keywords
 ckanext.notifications.dataset_keywords = dataset package resource data
@@ -264,11 +278,34 @@ http://your-ckan-instance/user/<username>/notifications
 ```
 
 The dashboard provides:
-- **Notification List**: View all intercepted email and flash messages
+- **Notification List**: View intercepted email, flash, and activity-driven notifications
 - **Filtering**: Filter notifications by type (email, flash, system)
 - **Sorting**: Sort by date (ascending/descending)
 - **Pagination**: Navigate through large notification lists
 - **Bulk Actions**: Mark multiple notifications as read/unread or delete in bulk
+
+### Accessing Notification Preferences
+
+Users can manage notification preferences at:
+
+```
+http://your-ckan-instance/user/<username>/notification-preferences
+```
+
+The preferences page supports:
+- **Global Control**: Enable/disable global notifications
+- **Mandatory System Notifications**: Protected system-level notification behavior
+- **Organization Preferences**: Per-organization enablement plus channel toggles (`Email`, `Notification center`)
+- **Dataset Preferences**: Per-dataset channel toggles, grouped by organization
+
+### How Activity Interception Uses Preferences
+
+When `ckanext.notifications.activity_interception = true`, intercepted activities are filtered by user preferences:
+
+- Organization-related activities are intercepted only when the target organization has at least one enabled channel (`Email` or `Notification center`).
+- Dataset-related activities are intercepted only when the target dataset has at least one enabled channel.
+- New dataset creation activities are evaluated against the owning organization preferences.
+- For intercepted new dataset activities, the generated body includes dataset information and a direct dataset link.
 
 ### Notification Classification
 
@@ -430,7 +467,7 @@ ckanext-notifications/
 │       ├── cli.py                 # CLI commands
 │       ├── views.py               # Flask blueprints and routes
 │       ├── helpers.py             # Template helper functions
-│       ├── interceptor.py         # Email/flash message interception
+│       ├── interceptor.py         # Email/flash/activity interception
 │       ├── config_declaration.yaml # Configuration schema
 │       ├── logic/
 │       │   ├── action.py          # Action functions (API endpoints)
@@ -625,6 +662,16 @@ def classify_notification_type(subject='', body='', endpoint=None):
 3. Check that flash messages are being generated (they appear in the web UI)
 4. Review browser console for JavaScript errors
 
+### Issue: Activity notifications not captured
+
+**Symptoms**: Dataset/organization activity updates are not appearing in notifications
+
+**Solutions**:
+1. Verify `ckanext.notifications.activity_interception = true` is set
+2. Check the user notification preferences page and confirm at least one channel is enabled for the related organization/dataset
+3. Confirm the activity type is one currently handled by `intercept_activity`
+4. Review CKAN logs for activity interception errors
+
 ## Support and Community
 
 - **Issues**: Report bugs on [GitHub Issues](https://github.com/Datashades/ckanext-notifications/issues)
@@ -645,5 +692,5 @@ This extension was developed to improve notification management in CKAN instance
 
 ---
 
-**Last Updated**: 2024  
+**Last Updated**: 2026  
 **Tested with CKAN**: 2.9, 2.10, 2.11
