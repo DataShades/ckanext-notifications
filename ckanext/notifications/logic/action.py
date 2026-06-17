@@ -7,7 +7,8 @@ from ckan.lib.pagination import Page
 from ckan.plugins import toolkit as tk
 from ckan.types import Context
 
-from ckanext.notifications.config import notifications_get_notifications_per_page
+from ckanext.notifications.config import notifications_get_notifications_per_page, notifications_get_activity_interception
+from ckanext.notifications.interceptor import intercept_activity
 from ckanext.notifications.model import Notification, NotificationPreference
 
 NotificationModel = cast(Any, Notification)
@@ -396,6 +397,24 @@ def notification_preferences_update(context, data_dict):
     return {'success': True}
 
 
+@tk.chained_action
+def activity_create(original_action, context, data_dict):
+    """
+    Chained action that intercepts 'activity_create' executions for the notifications dashboard.
+    """
+    # Execute core function first to ensure data validation passes
+    executed_activity = original_action(context, data_dict)
+    
+    if notifications_get_activity_interception():
+        try:
+            intercept_activity(executed_activity)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Failed to process activity logging: {str(e)}")
+        
+    return executed_activity
+
+
 def get_actions():
     return {
         'notification_list': notification_list,
@@ -404,4 +423,5 @@ def get_actions():
         'notification_unread_count': notification_unread_count,
         'notification_preferences_show': notification_preferences_show,
         'notification_preferences_update': notification_preferences_update,
+        'activity_create': activity_create,
     }

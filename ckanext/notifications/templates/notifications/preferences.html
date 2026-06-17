@@ -26,15 +26,18 @@
       can_edit_mandatory=can_edit_mandatory,
       pref_switch=pref_switch %}
 
-    {% snippet 'notifications/snippets/preferences_organizations.html',
-      organizations=preferences_data.organizations,
-      pref_switch=pref_switch,
-      channel_badge=channel_badge %}
+    {# Add additional preferences here based on activity interception #}
+    {% if h.activity_interception_enabled() %}
+      {% snippet 'notifications/snippets/preferences_organizations.html',
+        organizations=preferences_data.organizations,
+        pref_switch=pref_switch,
+        channel_badge=channel_badge %}
 
-    {% snippet 'notifications/snippets/preferences_datasets.html',
-      dataset_groups=preferences_data.dataset_groups,
-      pref_switch=pref_switch,
-      channel_badge=channel_badge %}
+      {% snippet 'notifications/snippets/preferences_datasets.html',
+        dataset_groups=preferences_data.dataset_groups,
+        pref_switch=pref_switch,
+        channel_badge=channel_badge %}
+    {% endif %}
 
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">{{ _('Save preferences') }}</button>
