@@ -5,13 +5,13 @@ Tests verify that all API actions work correctly, including pagination,
 filtering, sorting, and bulk operations.
 """
 
-import pytest
 from datetime import datetime, timedelta
 
-import ckan.tests.factories as factories
 import ckan.tests.helpers as test_helpers
-import ckan.model as model
+import pytest
+from ckan import model
 from ckan.plugins import toolkit as tk
+from ckan.tests import factories
 
 from ckanext.notifications.model import Notification
 
@@ -269,7 +269,7 @@ class TestNotificationGlobalAction:
             model.Session.query(Notification)
             .filter(
                 Notification.user_id == user["id"], # type: ignore
-                Notification.is_read == False  # noqa: E712
+                Notification.is_read == False
             )
             .count()
         )
@@ -314,7 +314,7 @@ class TestNotificationGlobalAction:
             model.Session.query(Notification)
             .filter(
                 Notification.user_id == user1["id"], # type: ignore
-                Notification.is_read == False  # noqa: E712
+                Notification.is_read == False
             )
             .count()
         )
@@ -324,7 +324,7 @@ class TestNotificationGlobalAction:
             model.Session.query(Notification)
             .filter(
                 Notification.user_id == user2["id"], # type: ignore
-                Notification.is_read == False  # noqa: E712
+                Notification.is_read == False
             )
             .count()
         )

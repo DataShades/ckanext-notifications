@@ -5,7 +5,6 @@ import click
 def notifications():
     """notifications CLI.
     """
-    pass
 
 
 @notifications.command()
@@ -13,7 +12,7 @@ def notifications():
 def command(name):
     """Docs.
     """
-    click.echo("Hello, {name}!".format(name=name))
+    click.echo(f"Hello, {name}!")
 
 
 def get_commands():

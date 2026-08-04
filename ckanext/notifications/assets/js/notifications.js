@@ -241,6 +241,65 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     syncDatasetOrgBulkFromDatasets(card.getAttribute('data-org-id'));
   });
+
+  // Turning on global notifications preference means opting out from all
+  // other channels/scopes on this page.
+  var preferencesForm = document.querySelector('.notifications-preferences-form');
+  var globalToggle = preferencesForm && preferencesForm.querySelector('input[name="global_enabled"]');
+
+  function getOtherPreferenceSwitches() {
+    if (!preferencesForm) {
+      return [];
+    }
+
+    var allSwitches = preferencesForm.querySelectorAll(
+      '.notifications-switch input[type="checkbox"], .notifications-channel-badge input[type="checkbox"]'
+    );
+
+    return Array.from(allSwitches).filter(function(input) {
+      return input !== globalToggle;
+    });
+  }
+
+  function disableOtherPreferencesForGlobalOptOut() {
+    getOtherPreferenceSwitches().forEach(function(input) {
+      if (typeof input.dataset.originallyDisabled === 'undefined') {
+        input.dataset.originallyDisabled = input.disabled ? 'true' : 'false';
+      }
+
+      if (!input.checked) {
+        input.disabled = true;
+        return;
+      }
+
+      input.checked = false;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      input.disabled = true;
+    });
+  }
+
+  function restoreOtherPreferencesAfterGlobalOptOut() {
+    getOtherPreferenceSwitches().forEach(function(input) {
+      var originallyDisabled = input.dataset.originallyDisabled === 'true';
+      input.disabled = originallyDisabled;
+    });
+  }
+
+  if (globalToggle) {
+    globalToggle.addEventListener('change', function() {
+      if (globalToggle.checked) {
+        disableOtherPreferencesForGlobalOptOut();
+      } else {
+        restoreOtherPreferencesAfterGlobalOptOut();
+      }
+    });
+
+    if (globalToggle.checked) {
+      disableOtherPreferencesForGlobalOptOut();
+    } else {
+      restoreOtherPreferencesAfterGlobalOptOut();
+    }
+  }
 });
 
 

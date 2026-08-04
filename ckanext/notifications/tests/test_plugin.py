@@ -5,8 +5,9 @@ Tests verify that the plugin loads correctly, registers blueprints,
 configures properly, and applies patches as expected.
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 import ckanext.notifications.plugin as plugin_module
 

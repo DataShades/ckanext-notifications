@@ -64,6 +64,15 @@ groups:
         type: string
         description: |
           If notification endpoint starts with this string, it will be classified as group-related.
+      
+      - key: ckanext.notifications.organization_followee_list
+        default: false
+        type: bool
+        description: |
+          If true, the list of organizations the user follows is shown in the
+          organization preferences section, allowing users to manage notification
+          preferences for those organizations.
+          If false, the list shows organizations where the user is a member.
 
       - key: ckanext.notifications.notifications_per_page
         default: 20

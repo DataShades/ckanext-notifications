@@ -29,8 +29,8 @@ def get_unread_count_for_current_user():
             {'user_id': tk.g.userobj.id}
         )
         return count
-    except Exception as e:
-        log.error(f"Error executing template helper unread count query: {str(e)}")
+    except (KeyError, ValueError, TypeError) as e:
+        log.error(f"Error executing template helper unread count query: {e!s}")
         return 0
 
 

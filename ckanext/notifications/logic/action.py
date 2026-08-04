@@ -1,15 +1,19 @@
-from sqlalchemy import desc
 from collections import defaultdict
 from typing import Any, cast
 
-from ckan import model
 from ckan.lib.pagination import Page
 from ckan.plugins import toolkit as tk
 from ckan.types import Context
-
-from ckanext.notifications.config import notifications_get_notifications_per_page, notifications_get_activity_interception
+from ckanext.notifications.config import (
+    notifications_get_activity_interception,
+    notifications_get_notifications_per_page,
+    notifications_get_organization_followee_list,
+)
 from ckanext.notifications.interceptor import intercept_activity
 from ckanext.notifications.model import Notification, NotificationPreference
+from sqlalchemy import desc
+
+from ckan import model
 
 NotificationModel = cast(Any, Notification)
 NotificationPreferenceModel = cast(Any, NotificationPreference)
@@ -55,9 +59,9 @@ def notification_list(context, data_dict):
     query = model.Session.query(Notification).filter(NotificationModel.user_id == user_id)
     
     if noti_type == 'marked_read':
-        query = query.filter(NotificationModel.is_read == True)  # noqa: E712
+        query = query.filter(NotificationModel.is_read == True)
     elif noti_type == 'marked_unread':
-        query = query.filter(NotificationModel.is_read == False)  # noqa: E712
+        query = query.filter(NotificationModel.is_read == False)
     elif noti_type:
         query = query.filter(NotificationModel.notification_type == noti_type)
         
@@ -123,7 +127,7 @@ def notification_global_action(context, data_dict):
     if action_type == 'delete_all':
         query.delete(synchronize_session=False)
     elif action_type == 'mark_all_read':
-        query.filter(NotificationModel.is_read == False).update( # noqa: E712
+        query.filter(NotificationModel.is_read == False).update(
             {NotificationModel.is_read: True},
             synchronize_session=False
         )
@@ -142,7 +146,7 @@ def notification_unread_count(context, data_dict):
     
     count = model.Session.query(Notification).filter(
         NotificationModel.user_id == user_id,
-        NotificationModel.is_read == False  # noqa: E712
+        NotificationModel.is_read == False
     ).count()
     
     return count
@@ -225,15 +229,23 @@ def notification_preferences_show(context, data_dict):
         'user': context.get('user'),
         'auth_user_obj': context.get('auth_user_obj'),
     }
-
-    organizations = tk.get_action('organization_list_for_user')(
-        action_context,
-        {
-            'id': user_id,
-            'permission': 'read',
-            'include_dataset_count': False,
-        },
-    )
+    
+    if notifications_get_organization_followee_list():
+        organizations = tk.get_action('organization_followee_list')(
+            action_context,
+            {
+                'id': user_id,
+            },
+        )
+    else:
+        organizations = tk.get_action('organization_list_for_user')(
+            action_context,
+            {
+                'id': user_id,
+                'permission': 'read',
+                'include_dataset_count': False,
+            },
+        )
 
     dataset_context: Context = {
         'model': model,
@@ -249,7 +261,6 @@ def notification_preferences_show(context, data_dict):
         {'id': user_id},
     )
 
-    organization_map = {org['id']: org for org in organizations}
     grouped_datasets = defaultdict(list)
     for dataset in followed_datasets:
         if dataset.get('state') != 'active':
@@ -277,7 +288,13 @@ def notification_preferences_show(context, data_dict):
 
     dataset_groups = []
     for org_id, datasets in grouped_datasets.items():
-        org = organization_map.get(org_id, {})
+        org = tk.get_action('organization_show')(
+            action_context,
+            {
+                'id': org_id,
+                'include_datasets': False,
+            },
+        )
         org_pref = _serialize_preference(user_id, 'organization', org_id)
         dataset_org_pref = _serialize_preference(user_id, 'dataset_organization', org_id)
 
@@ -408,9 +425,9 @@ def activity_create(original_action, context, data_dict):
     if notifications_get_activity_interception():
         try:
             intercept_activity(executed_activity)
-        except Exception as e:
+        except (OSError, ValueError, KeyError) as e:
             import logging
-            logging.getLogger(__name__).error(f"Failed to process activity logging: {str(e)}")
+            logging.getLogger(__name__).error(f"Failed to process activity logging: {e!s}")
         
     return executed_activity
 

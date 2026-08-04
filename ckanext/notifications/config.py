@@ -4,7 +4,6 @@ from typing import Any
 
 import ckan.plugins.toolkit as tk
 
-
 NOTIFICATIONS_EMAIL_INTERCEPTION = "ckanext.notifications.email_interception"
 NOTIFICATIONS_FLASH_INTERCEPTION = "ckanext.notifications.flash_interception"
 NOTIFICATIONS_ACTIVITY_INTERCEPTION = "ckanext.notifications.activity_interception"
@@ -15,6 +14,7 @@ NOTIFICATIONS_DATASET_ENDPOINT_STARTSWITH = "ckanext.notifications.dataset_endpo
 NOTIFICATIONS_RESOURCE_ENDPOINT_STARTSWITH = "ckanext.notifications.resource_endpoint_startswith"
 NOTIFICATIONS_ORGANIZATION_ENDPOINT_STARTSWITH = "ckanext.notifications.organization_endpoint_startswith"
 NOTIFICATIONS_GROUP_ENDPOINT_STARTSWITH = "ckanext.notifications.group_endpoint_startswith"
+NOTIFICATIONS_ORGANIZATION_FOLLOWEE_LIST = "ckanext.notifications.organization_followee_list"
 NOTIFICATIONS_PER_PAGE = "ckanext.notifications.notifications_per_page"
 NOTIFICATIONS_MAX_PER_USER = "ckanext.notifications.max_notifications_per_user"
 NOTIFICATIONS_CLEANUP_DAYS = "ckanext.notifications.cleanup_days"
@@ -29,6 +29,7 @@ NOTIFICATIONS_DEFAULT_DATASET_ENDPOINT_STARTSWITH = "dataset"
 NOTIFICATIONS_DEFAULT_RESOURCE_ENDPOINT_STARTSWITH = "resource"
 NOTIFICATIONS_DEFAULT_ORGANIZATION_ENDPOINT_STARTSWITH = "organization"
 NOTIFICATIONS_DEFAULT_GROUP_ENDPOINT_STARTSWITH = "group"
+NOTIFICATIONS_DEFAULT_ORGANIZATION_FOLLOWEE_LIST = False
 NOTIFICATIONS_DEFAULT_PER_PAGE = 20
 NOTIFICATIONS_DEFAULT_MAX_PER_USER = 1000
 NOTIFICATIONS_DEFAULT_CLEANUP_DAYS = 90
@@ -125,6 +126,15 @@ def notifications_get_group_endpoint_startswith() -> str:
 	return _get_config_str(
 		NOTIFICATIONS_GROUP_ENDPOINT_STARTSWITH,
 		NOTIFICATIONS_DEFAULT_GROUP_ENDPOINT_STARTSWITH,
+	)
+
+
+def notifications_get_organization_followee_list() -> bool:
+	return tk.asbool(
+		tk.config.get(
+			NOTIFICATIONS_ORGANIZATION_FOLLOWEE_LIST,
+			NOTIFICATIONS_DEFAULT_ORGANIZATION_FOLLOWEE_LIST,
+		)
 	)
 
 

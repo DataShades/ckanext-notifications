@@ -203,6 +203,17 @@ ckanext.notifications.organization_endpoint_startswith = organization
 ckanext.notifications.group_endpoint_startswith = group
 ```
 
+#### `ckanext.notifications.organization_followee_list`
+
+**Type**: Boolean  
+**Default**: `false`  
+**Description**: Controls which organizations are shown in notification preferences. When enabled, users manage preferences for organizations they follow. When disabled, users manage preferences for organizations where they are members.
+
+```ini
+# Example: show followed organizations in preferences
+ckanext.notifications.organization_followee_list = true
+```
+
 ### Display and Storage
 
 #### `ckanext.notifications.notifications_per_page`
@@ -259,6 +270,7 @@ ckanext.notifications.dataset_endpoint_startswith = dataset
 ckanext.notifications.resource_endpoint_startswith = resource
 ckanext.notifications.organization_endpoint_startswith = organization
 ckanext.notifications.group_endpoint_startswith = group
+ckanext.notifications.organization_followee_list = false
 
 # Display and retention settings
 ckanext.notifications.notifications_per_page = 20

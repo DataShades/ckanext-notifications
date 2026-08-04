@@ -5,12 +5,12 @@ Tests verify that notifications are correctly intercepted, classified,
 stored, and cleaned up according to configuration.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-import ckan.tests.factories as factories
-import ckan.model as model
+import pytest
+from ckan import model
+from ckan.tests import factories
 
 from ckanext.notifications import interceptor
 from ckanext.notifications.model import Notification

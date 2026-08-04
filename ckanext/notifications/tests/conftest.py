@@ -5,9 +5,8 @@ This module provides common utilities used across test suites.
 """
 
 import pytest
-
-import ckan.model as model
-import ckan.tests.factories as factories
+from ckan import model
+from ckan.tests import factories
 
 from ckanext.notifications.model import Notification
 
