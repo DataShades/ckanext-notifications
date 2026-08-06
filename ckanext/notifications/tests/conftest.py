@@ -1,9 +1,7 @@
-"""Test utilities and fixtures for ckanext-notifications.
-
-This module provides common utilities used across test suites.
-"""
+from typing import Any
 
 import pytest
+from pytest_factoryboy import register
 
 from ckan import model
 from ckan.tests import factories
@@ -12,13 +10,20 @@ from ckanext.notifications.model import Notification
 
 
 @pytest.fixture
-def user(clean_db):
-    """Create a test user."""
-    return factories.User()
+def clean_db(reset_db, migrate_db_for):
+    reset_db()
+
+    migrate_db_for("notifications")
+    migrate_db_for("activity")
+
+
+@register(_name="user")
+class UserFactory(factories.UserWithToken):
+    pass
 
 
 @pytest.fixture
-def user_with_notifications(user):
+def user_with_notifications(user: dict[str, Any]) -> dict[str, Any]:
     """Create a user with sample notifications."""
     for i in range(5):
         notif = Notification(
@@ -27,7 +32,7 @@ def user_with_notifications(user):
             source="email" if i % 2 == 0 else "flash",
             subject=f"Test Notification {i}",
             body=f"Test notification body {i}",
-            is_read=i % 3 == 0,  # type: ignore
+            is_read=i % 3 == 0,
         )
         model.Session.add(notif)
     model.Session.commit()

@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (countDisplay) {
       countDisplay.textContent = checkedCount;
     }
-    
+
     // Keep master toggle visually synchronized if rows are checked manually
     if (masterSelect) {
       masterSelect.checked = (checkedCount === checkboxes.length && checkboxes.length > 0);
@@ -365,13 +365,13 @@ function executeSingleRowAction(notificationId, actionKey) {
   if (actionKey === 'delete' && !confirm('Do you really want to delete this notification?')) {
     return;
   }
-  
+
   // Clear out any user checklist evaluations to process exclusively this ID
   var checkboxes = document.querySelectorAll('.notification-checkbox');
   checkboxes.forEach(function(cb) {
     cb.checked = false;
   });
-  
+
   // Target the single target row checkbox element contextually
   var targetCb = document.querySelector('.notification-checkbox[value="' + notificationId + '"]');
   if (targetCb) {

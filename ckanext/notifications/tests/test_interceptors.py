@@ -16,7 +16,6 @@ from ckanext.notifications import interceptor
 from ckanext.notifications.model import Notification
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestNotificationClassification:
     """Test notification type classification logic."""
@@ -58,30 +57,40 @@ class TestNotificationClassification:
 
     def test_classify_from_keywords_organization(self):
         """Organization keywords should classify as organization."""
-        result = interceptor.classify_notification_type(subject="Organization Changed", body="The organization was modified")
+        result = interceptor.classify_notification_type(
+            subject="Organization Changed", body="The organization was modified"
+        )
         assert result == "organization"
 
     def test_classify_from_keywords_group(self):
         """Group keywords should classify as group."""
-        result = interceptor.classify_notification_type(subject="Group Update", body="A new group was created")
+        result = interceptor.classify_notification_type(
+            subject="Group Update", body="A new group was created"
+        )
         assert result == "group"
 
     def test_classify_from_keywords_case_insensitive(self):
         """Keyword classification should be case-insensitive."""
-        result = interceptor.classify_notification_type(body="DATASET Created Successfully")
+        result = interceptor.classify_notification_type(
+            body="DATASET Created Successfully"
+        )
         assert result == "dataset"
 
     def test_classify_endpoint_takes_priority_over_keywords(self):
         """Endpoint classification should take priority over keywords."""
         result = interceptor.classify_notification_type(
-            subject="Organization Update", body="The organization was updated", endpoint="dataset_show"
+            subject="Organization Update",
+            body="The organization was updated",
+            endpoint="dataset_show",
         )
         # Should be classified as dataset from endpoint, not organization
         assert result == "dataset"
 
     def test_classify_unknown_returns_system(self):
         """Unknown notifications should default to system type."""
-        result = interceptor.classify_notification_type(subject="Random Message", body="This is just some random text")
+        result = interceptor.classify_notification_type(
+            subject="Random Message", body="This is just some random text"
+        )
         assert result == "system"
 
     def test_classify_none_endpoint_returns_system(self):
@@ -89,20 +98,25 @@ class TestNotificationClassification:
         result = interceptor.classify_notification_type(endpoint=None)
         assert result == "system"
 
-    @pytest.mark.ckan_config("ckanext.notifications.dataset_keywords", "collection data")
+    @pytest.mark.ckan_config(
+        "ckanext.notifications.dataset_keywords", "collection data"
+    )
     def test_classify_respects_custom_keywords(self):
         """Classification should use custom keyword config."""
-        result = interceptor.classify_notification_type(body="A new collection was created")
+        result = interceptor.classify_notification_type(
+            body="A new collection was created"
+        )
         assert result == "dataset"
 
-    @pytest.mark.ckan_config("ckanext.notifications.dataset_endpoint_startswith", "data")
+    @pytest.mark.ckan_config(
+        "ckanext.notifications.dataset_endpoint_startswith", "data"
+    )
     def test_classify_respects_custom_endpoint_config(self):
         """Classification should use custom endpoint config."""
         result = interceptor.classify_notification_type(endpoint="data_show")
         assert result == "dataset"
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestNotificationCreation:
     """Test notification creation and storage."""
@@ -112,7 +126,11 @@ class TestNotificationCreation:
         user = factories.User()
 
         interceptor.create_notification_record(
-            user_id=user["id"], notification_type="dataset", source="email", subject="Test Subject", body="Test Body"
+            user_id=user["id"],
+            notification_type="dataset",
+            source="email",
+            subject="Test Subject",
+            body="Test Body",
         )
 
         notification = (
@@ -175,7 +193,11 @@ class TestNotificationCreation:
 
         before_create = datetime.utcnow()
         interceptor.create_notification_record(
-            user_id=user["id"], notification_type="system", source="email", subject="Test", body="Test"
+            user_id=user["id"],
+            notification_type="system",
+            source="email",
+            subject="Test",
+            body="Test",
         )
         after_create = datetime.utcnow()
 
@@ -189,7 +211,6 @@ class TestNotificationCreation:
         assert before_create <= notification.created_at <= after_create  # type: ignore
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestNotificationCleanup:
     """Test automatic notification cleanup functionality."""
@@ -200,14 +221,22 @@ class TestNotificationCleanup:
 
         # Create an old notification (older than cleanup threshold)
         old_notif = Notification(
-            user_id=user["id"], notification_type="system", source="email", subject="Old", body="Old notification"
+            user_id=user["id"],
+            notification_type="system",
+            source="email",
+            subject="Old",
+            body="Old notification",
         )
         old_notif.created_at = datetime.utcnow() - timedelta(days=91)  # type: ignore
         model.Session.add(old_notif)
 
         # Create a new notification
         new_notif = Notification(
-            user_id=user["id"], notification_type="system", source="email", subject="New", body="New notification"
+            user_id=user["id"],
+            notification_type="system",
+            source="email",
+            subject="New",
+            body="New notification",
         )
         model.Session.add(new_notif)
         model.Session.commit()
@@ -260,14 +289,21 @@ class TestNotificationCleanup:
         # Create 15 notifications
         for i in range(15):
             notif = Notification(
-                user_id=user["id"], notification_type="system", source="email", subject=f"Notif {i}", body=f"Body {i}"
+                user_id=user["id"],
+                notification_type="system",
+                source="email",
+                subject=f"Notif {i}",
+                body=f"Body {i}",
             )
             notif.created_at = datetime.utcnow() - timedelta(seconds=15 - i)  # type: ignore
             model.Session.add(notif)
         model.Session.commit()
 
         # Cleanup with max of 10
-        with patch("ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user", return_value=10):
+        with patch(
+            "ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user",
+            return_value=10,
+        ):
             interceptor._cleanup_notifications_for_user(user["id"])
 
         remaining = (
@@ -286,13 +322,20 @@ class TestNotificationCleanup:
         # Create notifications with different timestamps
         for i in range(5):
             notif = Notification(
-                user_id=user["id"], notification_type="system", source="email", subject=f"Notif {i}", body=f"Body {i}"
+                user_id=user["id"],
+                notification_type="system",
+                source="email",
+                subject=f"Notif {i}",
+                body=f"Body {i}",
             )
             notif.created_at = datetime.utcnow() - timedelta(seconds=5 - i)  # type: ignore
             model.Session.add(notif)
         model.Session.commit()
 
-        with patch("ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user", return_value=3):
+        with patch(
+            "ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user",
+            return_value=3,
+        ):
             interceptor._cleanup_notifications_for_user(user["id"])
 
         remaining = (
@@ -307,7 +350,6 @@ class TestNotificationCleanup:
         assert remaining[0].subject == "Notif 0"
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestFlashInterception:
     """Test Flask flash message interception."""
@@ -331,7 +373,6 @@ class TestFlashInterception:
         assert hasattr(flask.flash, "_is_patched_by_ext")
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestEmailInterception:
     """Test email message interception."""
@@ -360,7 +401,7 @@ class TestEmailInterception:
 
         notification = (
             model.Session.query(Notification)
-            .filter(Notification.user_id == user["id"])  # type: ignore
+            .filter(Notification.user_id == user["id"])
             .first()
         )
 
@@ -368,7 +409,6 @@ class TestEmailInterception:
         assert notification.source == "email"
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestNotificationEdgeCases:
     """Test edge cases and error handling."""
@@ -378,7 +418,11 @@ class TestNotificationEdgeCases:
         user = factories.User()
 
         interceptor.create_notification_record(
-            user_id=user["id"], notification_type="system", source="email", subject="", body="Body with content only"
+            user_id=user["id"],
+            notification_type="system",
+            source="email",
+            subject="",
+            body="Body with content only",
         )
 
         notification = (
@@ -418,7 +462,11 @@ class TestNotificationEdgeCases:
         long_body = "x" * 10000
 
         interceptor.create_notification_record(
-            user_id=user["id"], notification_type="system", source="email", subject="Long content test", body=long_body
+            user_id=user["id"],
+            notification_type="system",
+            source="email",
+            subject="Long content test",
+            body=long_body,
         )
 
         notification = (

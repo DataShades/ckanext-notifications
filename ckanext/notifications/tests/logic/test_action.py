@@ -16,7 +16,6 @@ from ckan.tests import factories
 from ckanext.notifications.model import Notification
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestNotificationListAction:
     """Test notification_list API action."""
@@ -40,11 +39,13 @@ class TestNotificationListAction:
         user = factories.User()
         self._create_notifications(user["id"], count=25)
 
-        result = test_helpers.call_action("notification_list", user_id=user["id"], limit=10, page=1)
+        result = test_helpers.call_action(
+            "notification_list", user_id=user["id"], limit=10, page=1
+        )
 
-        assert len(result["items"]) == 10
-        assert result["page"] == 1
-        assert result["total_items"] == 25
+        assert len(result.items) == 10
+        assert result.page == 1
+        assert result.item_count == 25
 
     @pytest.mark.ckan_config("ckanext.notifications.notifications_per_page", 20)
     def test_notification_list_default_limit(self):
@@ -55,20 +56,24 @@ class TestNotificationListAction:
         result = test_helpers.call_action("notification_list", user_id=user["id"])
 
         # Should return items up to default limit
-        assert len(result["items"]) <= 25
+        assert len(result.items) <= 25
 
     def test_notification_list_pagination_page_2(self):
         """notification_list should handle pagination correctly."""
         user = factories.User()
         self._create_notifications(user["id"], count=25)
 
-        page1 = test_helpers.call_action("notification_list", user_id=user["id"], limit=10, page=1)
+        page1 = test_helpers.call_action(
+            "notification_list", user_id=user["id"], limit=10, page=1
+        )
 
-        page2 = test_helpers.call_action("notification_list", user_id=user["id"], limit=10, page=2)
+        page2 = test_helpers.call_action(
+            "notification_list", user_id=user["id"], limit=10, page=2
+        )
 
         # Different notifications on each page
-        page1_ids = [n["id"] for n in page1["items"]]
-        page2_ids = [n["id"] for n in page2["items"]]
+        page1_ids = [n["id"] for n in page1.items]
+        page2_ids = [n["id"] for n in page2.items]
 
         assert len(set(page1_ids) & set(page2_ids)) == 0
 
@@ -76,9 +81,13 @@ class TestNotificationListAction:
         """notification_list should filter by notification_type."""
         user = factories.User()
         self._create_notifications(user["id"], count=5, notification_type="dataset")
-        self._create_notifications(user["id"], count=5, notification_type="organization")
+        self._create_notifications(
+            user["id"], count=5, notification_type="organization"
+        )
 
-        result = test_helpers.call_action("notification_list", user_id=user["id"], notification_type="dataset")
+        result = test_helpers.call_action(
+            "notification_list", user_id=user["id"], notification_type="dataset"
+        )
 
         assert all(n["notification_type"] == "dataset" for n in result["items"])
         assert len(result["items"]) == 5
@@ -100,7 +109,9 @@ class TestNotificationListAction:
             model.Session.add(notif)
         model.Session.commit()
 
-        result = test_helpers.call_action("notification_list", user_id=user["id"], notification_type="marked_read")
+        result = test_helpers.call_action(
+            "notification_list", user_id=user["id"], notification_type="marked_read"
+        )
 
         assert all(n["is_read"] is True for n in result["items"])
         assert len(result["items"]) == 3
@@ -121,7 +132,9 @@ class TestNotificationListAction:
             model.Session.add(notif)
         model.Session.commit()
 
-        result = test_helpers.call_action("notification_list", user_id=user["id"], notification_type="marked_unread")
+        result = test_helpers.call_action(
+            "notification_list", user_id=user["id"], notification_type="marked_unread"
+        )
 
         assert all(n["is_read"] is False for n in result["items"])
         assert len(result["items"]) == 2
@@ -142,7 +155,9 @@ class TestNotificationListAction:
             model.Session.add(notif)
         model.Session.commit()
 
-        result = test_helpers.call_action("notification_list", user_id=user["id"], sort_order="desc")
+        result = test_helpers.call_action(
+            "notification_list", user_id=user["id"], sort_order="desc"
+        )
 
         # Most recent should be first
         timestamps = [n["created_at"] for n in result["items"]]
@@ -164,7 +179,9 @@ class TestNotificationListAction:
             model.Session.add(notif)
         model.Session.commit()
 
-        result = test_helpers.call_action("notification_list", user_id=user["id"], sort_order="asc")
+        result = test_helpers.call_action(
+            "notification_list", user_id=user["id"], sort_order="asc"
+        )
 
         # Oldest should be first
         timestamps = [n["created_at"] for n in result["items"]]
@@ -192,7 +209,6 @@ class TestNotificationListAction:
         assert "created_at" in notification
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestNotificationGlobalAction:
     """Test notification_global_action API action."""
@@ -216,7 +232,11 @@ class TestNotificationGlobalAction:
         user = factories.User()
         self._create_notifications(user["id"], count=5, is_read=False)
 
-        result = test_helpers.call_action("notification_global_action", user_id=user["id"], action_type="mark_all_read")
+        result = test_helpers.call_action(
+            "notification_global_action",
+            user_id=user["id"],
+            action_type="mark_all_read",
+        )
 
         assert result["success"] is True
 
@@ -235,7 +255,9 @@ class TestNotificationGlobalAction:
         user = factories.User()
         self._create_notifications(user["id"], count=5)
 
-        result = test_helpers.call_action("notification_global_action", user_id=user["id"], action_type="delete_all")
+        result = test_helpers.call_action(
+            "notification_global_action", user_id=user["id"], action_type="delete_all"
+        )
 
         assert result["success"] is True
 
@@ -254,7 +276,11 @@ class TestNotificationGlobalAction:
         self._create_notifications(user1["id"], count=3, is_read=False)
         self._create_notifications(user2["id"], count=3, is_read=False)
 
-        test_helpers.call_action("notification_global_action", user_id=user1["id"], action_type="mark_all_read")
+        test_helpers.call_action(
+            "notification_global_action",
+            user_id=user1["id"],
+            action_type="mark_all_read",
+        )
 
         # User1 should be all read
         u1_unread = (
@@ -270,7 +296,7 @@ class TestNotificationGlobalAction:
         u2_unread = (
             model.Session.query(Notification)
             .filter(
-                Notification.user_id == user2["id"],  # type: ignore
+                Notification.user_id == user2["id"],
                 Notification.is_read == False,
             )
             .count()
@@ -280,7 +306,6 @@ class TestNotificationGlobalAction:
         assert u2_unread == 3
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestNotificationUnreadCountAction:
     """Test notification_unread_count API action."""
@@ -302,7 +327,9 @@ class TestNotificationUnreadCountAction:
             model.Session.add(notif)
         model.Session.commit()
 
-        result = test_helpers.call_action("notification_unread_count", user_id=user["id"])
+        result = test_helpers.call_action(
+            "notification_unread_count", user_id=user["id"]
+        )
 
         assert isinstance(result, int)
         assert result == 3
@@ -324,7 +351,9 @@ class TestNotificationUnreadCountAction:
             model.Session.add(notif)
         model.Session.commit()
 
-        result = test_helpers.call_action("notification_unread_count", user_id=user["id"])
+        result = test_helpers.call_action(
+            "notification_unread_count", user_id=user["id"]
+        )
 
         # Should be 2 unread (1, 3)
         assert result == 2
@@ -345,7 +374,9 @@ class TestNotificationUnreadCountAction:
             model.Session.add(notif)
         model.Session.commit()
 
-        result = test_helpers.call_action("notification_unread_count", user_id=user["id"])
+        result = test_helpers.call_action(
+            "notification_unread_count", user_id=user["id"]
+        )
 
         assert result == 0
 
@@ -353,7 +384,9 @@ class TestNotificationUnreadCountAction:
         """notification_unread_count should be zero when no notifications."""
         user = factories.User()
 
-        result = test_helpers.call_action("notification_unread_count", user_id=user["id"])
+        result = test_helpers.call_action(
+            "notification_unread_count", user_id=user["id"]
+        )
 
         assert result == 0
 

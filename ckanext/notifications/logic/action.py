@@ -1,19 +1,16 @@
+import logging
 from collections import defaultdict
 from typing import Any, cast
 
 from sqlalchemy import desc
 
-from ckan import model
+from ckan import model, types
 from ckan.lib.pagination import Page
 from ckan.plugins import toolkit as tk
-from ckan.types import Context
 
-from ckanext.notifications.config import (
-    notifications_get_activity_interception,
-    notifications_get_notifications_per_page,
-    notifications_get_organization_followee_list,
-)
+from ckanext.notifications.config import notifications_get_activity_interception
 from ckanext.notifications.interceptor import intercept_activity
+from ckanext.notifications.logic import schema
 from ckanext.notifications.model import Notification, NotificationPreference
 
 NotificationModel = cast(Any, Notification)
@@ -22,46 +19,33 @@ NotificationPreferenceModel = cast(Any, NotificationPreference)
 GLOBAL_SCOPE_ID = "__global__"
 MANDATORY_SYSTEM_SCOPE_ID = "__system_mandatory__"
 
-
-def _dictize_notification(notification):
-    """Converts a SQLAlchemy notification instance into a plain dictionary."""
-    if not notification:
-        return {}
-    return {
-        "id": notification.id,
-        "user_id": notification.user_id,
-        "notification_type": notification.notification_type,
-        "source": notification.source,
-        "subject": notification.subject,
-        "body": notification.body,
-        "is_read": notification.is_read,
-        "created_at": notification.created_at.isoformat(),
-    }
+log = logging.getLogger(__name__)
 
 
 @tk.side_effect_free
-def notification_list(context, data_dict):
+@tk.validate(schema.notification_list_schema)
+def notification_list(context: types.Context, data_dict: types.DataDict) -> Page:
     """Retrieves a filtered, ordered, paginated list of notifications for a specific user.
+
     Supported filters in data_dict: 'notification_type', 'sort_order' (asc/desc),
     'page', and 'limit'. Returns a CKAN Page object.
     """
     tk.check_access("notification_list_auth", context, data_dict)
 
-    user_id = data_dict.get("user_id")
-    noti_type = data_dict.get("notification_type")
-    sort_order = data_dict.get("sort_order", "desc")
-    default_limit = notifications_get_notifications_per_page()
-    page = max(int(data_dict.get("page", 1) or 1), 1)
-    limit = max(int(data_dict.get("limit", default_limit) or default_limit), 1)
-    limit = min(limit, default_limit)
+    user_id = data_dict["user_id"]
+    noti_type = data_dict["notification_type"]
+    sort_order = data_dict["sort_order"]
+    page = data_dict["page"]
+    limit = data_dict["limit"]
+
     offset = (page - 1) * limit
 
     query = model.Session.query(Notification).filter(NotificationModel.user_id == user_id)
 
     if noti_type == "marked_read":
-        query = query.filter(NotificationModel.is_read == True)
+        query = query.filter(NotificationModel.is_read == True)  # noqa: E712
     elif noti_type == "marked_unread":
-        query = query.filter(NotificationModel.is_read == False)
+        query = query.filter(NotificationModel.is_read == False)  # noqa: E712
     elif noti_type:
         query = query.filter(NotificationModel.notification_type == noti_type)
 
@@ -71,7 +55,7 @@ def notification_list(context, data_dict):
         query = query.order_by(NotificationModel.created_at)
 
     total_count = query.count()
-    items = [_dictize_notification(n) for n in query.offset(offset).limit(limit).all()]
+    items = [n.dictize() for n in query.offset(offset).limit(limit).all()]
 
     return Page(
         items,
@@ -83,18 +67,17 @@ def notification_list(context, data_dict):
     )
 
 
-def notification_patch(context, data_dict):
+@tk.validate(schema.notification_patch_schema)
+def notification_patch(context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     """Updates status properties ('is_read') or completely removes records.
+
     Handles bulk requests by processing an array of string 'ids'.
     """
     tk.check_access("notification_modify_auth", context, data_dict)
 
-    notification_ids = data_dict.get("ids", [])
-    action_type = data_dict.get("action_type")
-    user_id = data_dict.get("user_id")
-
-    if not notification_ids or not action_type:
-        raise tk.ValidationError({"message": "Missing target ids or action_type state parameter."})
+    notification_ids = data_dict["ids"]
+    action_type = data_dict["action_type"]
+    user_id = data_dict["user_id"]
 
     query = model.Session.query(Notification).filter(
         NotificationModel.id.in_(notification_ids), NotificationModel.user_id == user_id
@@ -111,51 +94,45 @@ def notification_patch(context, data_dict):
     return {"success": True, "count": len(notification_ids)}
 
 
-def notification_global_action(context, data_dict):
+@tk.validate(schema.notification_global_action_schema)
+def notification_global_action(context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     """Applies massive transformations targeting an entire collection scope.
+
     Options: 'mark_all_read' or 'delete_all'
     """
     tk.check_access("notification_modify_auth", context, data_dict)
 
-    user_id = data_dict.get("user_id")
-    action_type = data_dict.get("action_type")
+    user_id = data_dict["user_id"]
+    action_type = data_dict["action_type"]
 
     query = model.Session.query(Notification).filter(NotificationModel.user_id == user_id)
 
     if action_type == "delete_all":
         query.delete(synchronize_session=False)
     elif action_type == "mark_all_read":
-        query.filter(NotificationModel.is_read == False).update({NotificationModel.is_read: True}, synchronize_session=False)
+        query.filter(NotificationModel.is_read == False).update(  # noqa: E712
+            {NotificationModel.is_read: True}, synchronize_session=False
+        )
 
     model.Session.commit()
     return {"success": True}
 
 
 @tk.side_effect_free
-def notification_unread_count(context, data_dict):
+@tk.validate(schema.notification_unread_count_schema)
+def notification_unread_count(context: types.Context, data_dict: types.DataDict) -> int:
     """Returns a simplified total integer count of unread items."""
     tk.check_access("notification_list_auth", context, data_dict)
-    user_id = data_dict.get("user_id")
+    user_id = data_dict["user_id"]
 
-    if not user_id:
-        raise tk.ValidationError({"message": "Missing user_id parameter."})
-
-    count = (
+    return (
         model.Session.query(Notification)
-        .filter(NotificationModel.user_id == user_id, NotificationModel.is_read == False)
+        .filter(
+            NotificationModel.user_id == user_id,
+            NotificationModel.is_read == False,  # noqa: E712
+        )
         .count()
     )
-
-    return count
-
-
-def _pref_as_dict(pref):
-    return {
-        "enabled": bool(pref.enabled),
-        "email_enabled": bool(pref.email_enabled),
-        "in_app_enabled": bool(pref.in_app_enabled),
-        "mandatory": bool(pref.mandatory),
-    }
 
 
 def _normalize_channels(enabled: bool, email_enabled: bool, in_app_enabled: bool):
@@ -166,7 +143,15 @@ def _normalize_channels(enabled: bool, email_enabled: bool, in_app_enabled: bool
     if not email_enabled and not in_app_enabled:
         return True, True, True
 
-    return bool(email_enabled or in_app_enabled), bool(email_enabled), bool(in_app_enabled)
+    return (
+        bool(email_enabled or in_app_enabled),
+        bool(email_enabled),
+        bool(in_app_enabled),
+    )
+
+
+def _serialize_preference(user_id: str, scope_type: str, scope_id: str, mandatory: bool = False):
+    return _get_or_create_preference(user_id, scope_type, scope_id, mandatory=mandatory).dictize()
 
 
 def _get_or_create_preference(user_id: str, scope_type: str, scope_id: str, mandatory: bool = False) -> Any:
@@ -189,10 +174,7 @@ def _get_or_create_preference(user_id: str, scope_type: str, scope_id: str, mand
     if pref:
         return pref
 
-    if not mandatory and scope_type == "global" and scope_id == GLOBAL_SCOPE_ID:
-        default_enabled = False
-    else:
-        default_enabled = True
+    default_enabled = mandatory or scope_type != "global" or scope_id != GLOBAL_SCOPE_ID
 
     pref = NotificationPreference(
         user_id=user_id,
@@ -207,61 +189,46 @@ def _get_or_create_preference(user_id: str, scope_type: str, scope_id: str, mand
     return pref
 
 
-def _serialize_preference(user_id: str, scope_type: str, scope_id: str, mandatory: bool = False):
-    pref = _get_or_create_preference(user_id, scope_type, scope_id, mandatory=mandatory)
-    return _pref_as_dict(pref)
-
-
 @tk.side_effect_free
-def notification_preferences_show(context, data_dict):
+@tk.validate(schema.notification_preferences_show_schema)
+def notification_preferences_show(context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     tk.check_access("notification_preferences_show_auth", context, data_dict)
 
-    user_id = data_dict.get("user_id")
-    if not user_id:
-        raise tk.ValidationError({"user_id": "Missing user_id parameter."})
+    user_id = data_dict["user_id"]
 
-    action_context: Context = {
-        "model": model,
-        "session": model.Session,
-        "user": context.get("user"),
-        "auth_user_obj": context.get("auth_user_obj"),
-    }
+    organizations = tk.get_action("organization_list_for_user")(
+        types.Context(
+            model=model,
+            session=model.Session,
+            user=context.get("user", ""),
+            auth_user_obj=context.get("auth_user_obj"),
+        ),
+        {
+            "id": user_id,
+            "permission": "read",
+            "include_dataset_count": False,
+        },
+    )
 
-    if notifications_get_organization_followee_list():
-        organizations = tk.get_action("organization_followee_list")(
-            action_context,
-            {
-                "id": user_id,
-            },
-        )
-    else:
-        organizations = tk.get_action("organization_list_for_user")(
-            action_context,
-            {
-                "id": user_id,
-                "permission": "read",
-                "include_dataset_count": False,
-            },
-        )
-
-    dataset_context: Context = {
-        "model": model,
-        "session": model.Session,
-        "user": context.get("user"),
-        "auth_user_obj": context.get("auth_user_obj"),
-        "for_view": True,
-        "with_capacity": False,
-    }
-
-    followed_datasets = tk.get_action("dataset_followee_list")(
-        dataset_context,
+    followed_datasets: list[dict[str, Any]] = tk.get_action("dataset_followee_list")(
+        types.Context(
+            model=model,
+            session=model.Session,
+            user=context.get("user", ""),
+            auth_user_obj=context.get("auth_user_obj"),
+            for_view=True,
+            with_capacity=False,
+        ),
         {"id": user_id},
     )
 
-    grouped_datasets = defaultdict(list)
+    organization_map = {org["id"]: org for org in organizations}
+    grouped_datasets: dict[str, list[dict[str, Any]]] = defaultdict(list)
+
     for dataset in followed_datasets:
-        if dataset.get("state") != "active":
+        if dataset.get("state") != model.State.ACTIVE:
             continue
+
         owner_org = dataset.get("owner_org") or "__no_org__"
         grouped_datasets[owner_org].append(dataset)
 
@@ -273,31 +240,26 @@ def notification_preferences_show(context, data_dict):
         mandatory=True,
     )
 
-    organizations_payload = []
-    for org in organizations:
-        organizations_payload.append(
-            {
-                "id": org["id"],
-                "name": org.get("name"),
-                "title": org.get("title") or org.get("display_name") or org.get("name"),
-                "description": org.get("description") or "",
-                "preference": _serialize_preference(user_id, "organization", org["id"]),
-            }
-        )
+    organizations_payload: list[dict[str, Any]] = [
+        {
+            "id": org["id"],
+            "name": org.get("name"),
+            "title": org.get("title") or org.get("display_name") or org.get("name"),
+            "description": org.get("description") or "",
+            "preference": _serialize_preference(user_id, "organization", org["id"]),
+        }
+        for org in organizations
+    ]
 
     dataset_groups = []
+
     for org_id, datasets in grouped_datasets.items():
-        org = tk.get_action("organization_show")(
-            action_context,
-            {
-                "id": org_id,
-                "include_datasets": False,
-            },
-        )
+        org = organization_map.get(org_id, {})
         org_pref = _serialize_preference(user_id, "organization", org_id)
         dataset_org_pref = _serialize_preference(user_id, "dataset_organization", org_id)
 
         dataset_entries = []
+
         for dataset in datasets:
             dataset_pref = _serialize_preference(user_id, "dataset", dataset["id"])
             dataset_effective = {
@@ -339,21 +301,20 @@ def notification_preferences_show(context, data_dict):
     }
 
 
-def notification_preferences_update(context, data_dict):
+@tk.validate(schema.notification_preferences_update_schema)
+def notification_preferences_update(context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     tk.check_access("notification_preferences_update_auth", context, data_dict)
 
-    user_id = data_dict.get("user_id")
-    if not user_id:
-        raise tk.ValidationError({"user_id": "Missing user_id parameter."})
+    user_id = data_dict["user_id"]
 
-    global_settings = data_dict.get("global_settings", {})
+    global_settings = data_dict["global_settings"]
     enabled = bool(global_settings.get("enabled", True))
     global_pref = _get_or_create_preference(user_id, "global", GLOBAL_SCOPE_ID)
     global_pref.enabled = enabled
     global_pref.email_enabled = enabled
     global_pref.in_app_enabled = enabled
 
-    mandatory_payload = data_dict.get("mandatory_system", {})
+    mandatory_payload = data_dict["mandatory_system"]
     mandatory_pref = _get_or_create_preference(
         user_id,
         "global",
@@ -369,7 +330,7 @@ def notification_preferences_update(context, data_dict):
         mandatory_pref.email_enabled = m_enabled
         mandatory_pref.in_app_enabled = m_enabled
 
-    for organization in data_dict.get("organizations", []):
+    for organization in data_dict["organizations"]:
         org_id = organization.get("id")
         if not org_id:
             continue
@@ -387,7 +348,7 @@ def notification_preferences_update(context, data_dict):
         org_pref.email_enabled = org_email_enabled
         org_pref.in_app_enabled = org_in_app_enabled
 
-    for dataset_org in data_dict.get("dataset_organizations", []):
+    for dataset_org in data_dict["dataset_organizations"]:
         org_id = dataset_org.get("id")
         if not org_id:
             continue
@@ -398,7 +359,7 @@ def notification_preferences_update(context, data_dict):
         org_pref.email_enabled = org_enabled
         org_pref.in_app_enabled = org_enabled
 
-    for dataset in data_dict.get("datasets", []):
+    for dataset in data_dict["datasets"]:
         dataset_id = dataset.get("id")
         if not dataset_id:
             continue
@@ -418,7 +379,7 @@ def notification_preferences_update(context, data_dict):
 
 
 @tk.chained_action
-def activity_create(original_action, context, data_dict):
+def activity_create(original_action: types.Action, context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     """Chained action that intercepts 'activity_create' executions for the notifications dashboard."""
     # Execute core function first to ensure data validation passes
     executed_activity = original_action(context, data_dict)
@@ -426,15 +387,13 @@ def activity_create(original_action, context, data_dict):
     if notifications_get_activity_interception():
         try:
             intercept_activity(executed_activity)
-        except (OSError, ValueError, KeyError) as e:
-            import logging
-
-            logging.getLogger(__name__).error(f"Failed to process activity logging: {e!s}")
+        except Exception:
+            log.exception("Failed to process activity logging")
 
     return executed_activity
 
 
-def get_actions():
+def get_actions() -> dict[str, types.Action | types.ChainedAction]:
     return {
         "notification_list": notification_list,
         "notification_patch": notification_patch,

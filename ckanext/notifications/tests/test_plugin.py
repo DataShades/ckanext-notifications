@@ -11,7 +11,6 @@ import pytest
 import ckanext.notifications.plugin as plugin_module
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.ckan_config("ckanext.notifications.email_interception", True)
 @pytest.mark.usefixtures("with_plugins")
 class TestPluginEmailInterception:
@@ -23,7 +22,12 @@ class TestPluginEmailInterception:
     @patch("ckanext.notifications.plugin.tk.add_public_directory")
     @patch("ckanext.notifications.plugin.tk.add_resource")
     def test_plugin_patches_mailer_when_enabled(
-        self, mock_add_resource, mock_add_public, mock_add_templates, mock_patch_flash, mock_patch_mailer
+        self,
+        mock_add_resource,
+        mock_add_public,
+        mock_add_templates,
+        mock_patch_flash,
+        mock_patch_mailer,
     ):
         """Plugin should patch mailer when email interception enabled."""
         plugin_obj = plugin_module.NotificationsPlugin()
@@ -40,7 +44,12 @@ class TestPluginEmailInterception:
     @patch("ckanext.notifications.plugin.tk.add_resource")
     @pytest.mark.ckan_config("ckanext.notifications.email_interception", False)
     def test_plugin_skips_mailer_patch_when_disabled(
-        self, mock_add_resource, mock_add_public, mock_add_templates, mock_patch_flash, mock_patch_mailer
+        self,
+        mock_add_resource,
+        mock_add_public,
+        mock_add_templates,
+        mock_patch_flash,
+        mock_patch_mailer,
     ):
         """Plugin should not patch mailer when email interception disabled."""
         plugin_obj = plugin_module.NotificationsPlugin()
@@ -51,7 +60,6 @@ class TestPluginEmailInterception:
         assert not mock_patch_mailer.called
 
 
-@pytest.mark.ckan_config("ckan.plugins", "notifications")
 @pytest.mark.ckan_config("ckanext.notifications.flash_interception", True)
 @pytest.mark.usefixtures("with_plugins")
 class TestPluginFlashInterception:
@@ -63,7 +71,12 @@ class TestPluginFlashInterception:
     @patch("ckanext.notifications.plugin.tk.add_public_directory")
     @patch("ckanext.notifications.plugin.tk.add_resource")
     def test_plugin_patches_flash_when_enabled(
-        self, mock_add_resource, mock_add_public, mock_add_templates, mock_patch_flash, mock_patch_mailer
+        self,
+        mock_add_resource,
+        mock_add_public,
+        mock_add_templates,
+        mock_patch_flash,
+        mock_patch_mailer,
     ):
         """Plugin should patch flask.flash when flash interception enabled."""
         plugin_obj = plugin_module.NotificationsPlugin()
@@ -80,7 +93,12 @@ class TestPluginFlashInterception:
     @patch("ckanext.notifications.plugin.tk.add_resource")
     @pytest.mark.ckan_config("ckanext.notifications.flash_interception", False)
     def test_plugin_skips_flash_patch_when_disabled(
-        self, mock_add_resource, mock_add_public, mock_add_templates, mock_patch_flash, mock_patch_mailer
+        self,
+        mock_add_resource,
+        mock_add_public,
+        mock_add_templates,
+        mock_patch_flash,
+        mock_patch_mailer,
     ):
         """Plugin should not patch flash when flash interception disabled."""
         plugin_obj = plugin_module.NotificationsPlugin()

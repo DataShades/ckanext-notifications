@@ -15,7 +15,7 @@ from ckan.lib import mailer as ckan_mailer
 from ckan.plugins import toolkit as tk
 
 from ckanext.notifications import config
-from ckanext.notifications.model import Notification
+from ckanext.notifications.model import Notification, NotificationPreference
 
 log = logging.getLogger(__name__)
 NotificationModel = cast(Any, Notification)
@@ -29,11 +29,10 @@ _original_mail_recipient = None
 
 def _should_intercept_notification(user_id, notification_type):
     """Check if a notification should be intercepted for a user.
+
     When global_enabled=True, only system messages are intercepted.
     When mandatory_enabled=False, system notifications are never intercepted.
     """
-    from ckanext.notifications.model import NotificationPreference
-
     try:
         GLOBAL_SCOPE_ID = "__global__"
         MANDATORY_SYSTEM_SCOPE_ID = "__system_mandatory__"
@@ -139,7 +138,11 @@ def create_notification_record(user_id, notification_type, source, subject, body
         # Open an isolated session or use the contextual model.Session
         session = model.Session
         notification = Notification(
-            user_id=user_id, notification_type=notification_type, source=source, subject=subject, body=body
+            user_id=user_id,
+            notification_type=notification_type,
+            source=source,
+            subject=subject,
+            body=body,
         )
         session.add(notification)
         _cleanup_notifications_for_user(user_id)
@@ -280,14 +283,15 @@ def patch_ckan_flash():
     # Also patch in ckan.lib.helpers where it's imported
     try:
         ckan_helpers.flash = patched_flash
-    except Exception as e:
-        log.error(f"Failed to patch ckan.lib.helpers.flash: {str(e)}", exc_info=True)
+    except Exception:
+        log.exception("Failed to patch ckan.lib.helpers.flash")
 
     log.info("Successfully patched Flask flash for notification monitoring.")
 
 
 def patch_ckan_mailer():
     """Wraps ckan.lib.mailer.mail_recipient to intercept all outgoing emails.
+
     Extracts the user ID, subject, and body to replicate them inside our DB.
     """
     global _original_mail_recipient
@@ -327,7 +331,11 @@ def patch_ckan_mailer():
                 )
 
                 if not _should_intercept_notification(user.id, notification_type):
-                    log.debug(f"Email skipped by notification preference rules: user={user.id}, type={notification_type}")
+                    log.debug(
+                        "Email skipped by notification preference rules: user=%s, type=%s",
+                        user.id,
+                        notification_type,
+                    )
                     return result
 
                 create_notification_record(
@@ -338,7 +346,7 @@ def patch_ckan_mailer():
                     body=formatted_body,
                 )
         except Exception as e:
-            log.error(f"Error intercepting mail delivery: {str(e)}")
+            log.error("Error intercepting mail delivery: %s", e)
 
         return result
 
@@ -347,10 +355,8 @@ def patch_ckan_mailer():
     log.info("Successfully patched CKAN mailer for notification monitoring.")
 
 
-def intercept_activity(activity_dict):
-    """Parses a newly created CKAN activity stream record and maps it
-    to notifications for impacted users.
-    """
+def intercept_activity(activity_dict: dict[str, Any]):
+    """Intercept activity stream events and create notifications for impacted users."""
     activity_type = activity_dict.get("activity_type", "")
     object_id = activity_dict.get("object_id")
     user_id = activity_dict.get("user_id")
@@ -361,7 +367,8 @@ def intercept_activity(activity_dict):
 
     # Build organization and dataset lookup dicts with their preferences
     org_prefs_map = {org["id"]: org.get("preference", {}) for org in organizations}
-    dataset_prefs_map = {}
+    dataset_prefs_map: dict[str, dict[str, Any]] = {}
+
     for group in datasets:
         for dataset in group.get("datasets", []):
             dataset_prefs_map[dataset["id"]] = dataset.get("preference", {})
@@ -391,7 +398,11 @@ def intercept_activity(activity_dict):
         entity = package
         entity_name = entity.title if entity else object_id
         entity_type = entity.type if entity else "package"
-        entity_url = tk.url_for(f"{entity_type}.read", id=entity.name if entity else object_id, _external=True)
+        entity_url = tk.url_for(
+            f"{entity_type}.read",
+            id=entity.name if entity else object_id,
+            _external=True,
+        )
 
     # For package_update and resource_update, we check
     # if the updated package/resource is being followed directly by the user.
@@ -409,7 +420,11 @@ def intercept_activity(activity_dict):
         entity = model.Package.get(object_id)
         entity_name = entity.title if entity else object_id
         entity_type = entity.type if entity else "dataset"
-        entity_url = tk.url_for(f"{entity_type}.read", id=entity.name if entity else object_id, _external=True)
+        entity_url = tk.url_for(
+            f"{entity_type}.read",
+            id=entity.name if entity else object_id,
+            _external=True,
+        )
 
     # For organization updates, we check if the organization the user is a member of
     # is being updated.
@@ -427,7 +442,11 @@ def intercept_activity(activity_dict):
         entity = model.Group.get(object_id)
         entity_name = entity.display_name if entity else object_id
         entity_type = entity.type if entity else "organization"
-        entity_url = tk.url_for(f"{entity_type}.read", id=entity.name if entity else object_id, _external=True)
+        entity_url = tk.url_for(
+            f"{entity_type}.read",
+            id=entity.name if entity else object_id,
+            _external=True,
+        )
 
     # Otherwise, we skip it.
     else:
@@ -438,7 +457,7 @@ def intercept_activity(activity_dict):
 
     user = model.User.get(user_id)
     if not user:
-        log.warning(f"Could not find user with id {user_id} for activity notification.")
+        log.warning("Could not find user with id %s for activity notification.", user_id)
         return
 
     if activity_type == "new package":
@@ -460,11 +479,24 @@ def intercept_activity(activity_dict):
             # Use the original (unpatched) mailer to avoid re-intercepting this
             # email and creating a duplicate notification record.
             _mailer = _original_mail_recipient or ckan_mailer.mail_recipient
-            _mailer(recipient_name=user.name, recipient_email=user.email or "", subject=subject, body=body, body_html=body)
-        except Exception as e:
-            log.error(f"Failed to send activity email notification to {user.email}: {e}")
+            _mailer(
+                recipient_name=user.name,
+                recipient_email=user.email or "",
+                subject=subject,
+                body=body,
+                body_html=body,
+            )
+        except Exception:
+            log.exception(
+                "Failed to send activity email notification to %s",
+                user.email,
+            )
 
     if has_in_app_enabled:
         create_notification_record(
-            user_id=user_id, notification_type=notification_type, source="activity", subject=subject, body=body
+            user_id=user_id,
+            notification_type=notification_type,
+            source="activity",
+            subject=subject,
+            body=body,
         )
