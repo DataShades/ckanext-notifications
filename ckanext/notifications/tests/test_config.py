@@ -55,9 +55,7 @@ class TestConfigGetters:
         assert "package" in result
         assert "resource" in result
 
-    @pytest.mark.ckan_config(
-        "ckanext.notifications.dataset_keywords", "data collection package"
-    )
+    @pytest.mark.ckan_config("ckanext.notifications.dataset_keywords", "data collection package")
     def test_dataset_keywords_custom_config(self):
         """Custom dataset keywords should be read and normalized."""
         result = config.notifications_get_dataset_keywords()
@@ -67,9 +65,7 @@ class TestConfigGetters:
         # Verify lowercase normalization
         assert all(kw.islower() for kw in result)
 
-    @pytest.mark.ckan_config(
-        "ckanext.notifications.dataset_keywords", ["DATA", "COLLECTION", "PACKAGE"]
-    )
+    @pytest.mark.ckan_config("ckanext.notifications.dataset_keywords", ["DATA", "COLLECTION", "PACKAGE"])
     def test_dataset_keywords_list_format(self):
         """Keywords can be provided as list and should be normalized."""
         result = config.notifications_get_dataset_keywords()
@@ -84,9 +80,7 @@ class TestConfigGetters:
         assert "organization" in result
         assert "organisation" in result
 
-    @pytest.mark.ckan_config(
-        "ckanext.notifications.organization_keywords", "organization team agency"
-    )
+    @pytest.mark.ckan_config("ckanext.notifications.organization_keywords", "organization team agency")
     def test_organization_keywords_custom_config(self):
         """Custom organization keywords should be read."""
         result = config.notifications_get_organization_keywords()
@@ -105,17 +99,13 @@ class TestConfigGetters:
         result = config.notifications_get_dataset_endpoint_startswith()
         assert result == "dataset"
 
-    @pytest.mark.ckan_config(
-        "ckanext.notifications.dataset_endpoint_startswith", "DATASET"
-    )
+    @pytest.mark.ckan_config("ckanext.notifications.dataset_endpoint_startswith", "DATASET")
     def test_dataset_endpoint_startswith_normalized_to_lowercase(self):
         """Endpoint prefixes should be normalized to lowercase."""
         result = config.notifications_get_dataset_endpoint_startswith()
         assert result == "dataset"
 
-    @pytest.mark.ckan_config(
-        "ckanext.notifications.dataset_endpoint_startswith", "data"
-    )
+    @pytest.mark.ckan_config("ckanext.notifications.dataset_endpoint_startswith", "data")
     def test_dataset_endpoint_startswith_custom_config(self):
         """Custom dataset endpoint should be respected."""
         result = config.notifications_get_dataset_endpoint_startswith()
@@ -126,9 +116,7 @@ class TestConfigGetters:
         result = config.notifications_get_resource_endpoint_startswith()
         assert result == "resource"
 
-    @pytest.mark.ckan_config(
-        "ckanext.notifications.resource_endpoint_startswith", "file"
-    )
+    @pytest.mark.ckan_config("ckanext.notifications.resource_endpoint_startswith", "file")
     def test_resource_endpoint_startswith_custom_config(self):
         """Custom resource endpoint should be respected."""
         result = config.notifications_get_resource_endpoint_startswith()
@@ -184,9 +172,7 @@ class TestConfigGetters:
         result = config.notifications_get_max_notifications_per_user()
         assert result == 5000
 
-    @pytest.mark.ckan_config(
-        "ckanext.notifications.max_notifications_per_user", "invalid"
-    )
+    @pytest.mark.ckan_config("ckanext.notifications.max_notifications_per_user", "invalid")
     def test_max_notifications_per_user_invalid_uses_default(self):
         """Invalid max config should fall back to default."""
         result = config.notifications_get_max_notifications_per_user()
@@ -237,12 +223,8 @@ class TestConfigConstants:
 
     def test_constants_have_proper_format(self):
         """Config key constants should follow proper naming format."""
-        assert config.NOTIFICATIONS_EMAIL_INTERCEPTION.startswith(
-            "ckanext.notifications."
-        )
-        assert config.NOTIFICATIONS_FLASH_INTERCEPTION.startswith(
-            "ckanext.notifications."
-        )
+        assert config.NOTIFICATIONS_EMAIL_INTERCEPTION.startswith("ckanext.notifications.")
+        assert config.NOTIFICATIONS_FLASH_INTERCEPTION.startswith("ckanext.notifications.")
 
     def test_default_constants_have_expected_types(self):
         """Default constants should have appropriate types."""

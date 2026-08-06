@@ -4,7 +4,7 @@ Tests verify that notifications are correctly intercepted, classified,
 stored, and cleaned up according to configuration.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import pytest
@@ -57,23 +57,17 @@ class TestNotificationClassification:
 
     def test_classify_from_keywords_organization(self):
         """Organization keywords should classify as organization."""
-        result = interceptor.classify_notification_type(
-            subject="Organization Changed", body="The organization was modified"
-        )
+        result = interceptor.classify_notification_type(subject="Organization Changed", body="The organization was modified")
         assert result == "organization"
 
     def test_classify_from_keywords_group(self):
         """Group keywords should classify as group."""
-        result = interceptor.classify_notification_type(
-            subject="Group Update", body="A new group was created"
-        )
+        result = interceptor.classify_notification_type(subject="Group Update", body="A new group was created")
         assert result == "group"
 
     def test_classify_from_keywords_case_insensitive(self):
         """Keyword classification should be case-insensitive."""
-        result = interceptor.classify_notification_type(
-            body="DATASET Created Successfully"
-        )
+        result = interceptor.classify_notification_type(body="DATASET Created Successfully")
         assert result == "dataset"
 
     def test_classify_endpoint_takes_priority_over_keywords(self):
@@ -88,9 +82,7 @@ class TestNotificationClassification:
 
     def test_classify_unknown_returns_system(self):
         """Unknown notifications should default to system type."""
-        result = interceptor.classify_notification_type(
-            subject="Random Message", body="This is just some random text"
-        )
+        result = interceptor.classify_notification_type(subject="Random Message", body="This is just some random text")
         assert result == "system"
 
     def test_classify_none_endpoint_returns_system(self):
@@ -98,19 +90,13 @@ class TestNotificationClassification:
         result = interceptor.classify_notification_type(endpoint=None)
         assert result == "system"
 
-    @pytest.mark.ckan_config(
-        "ckanext.notifications.dataset_keywords", "collection data"
-    )
+    @pytest.mark.ckan_config("ckanext.notifications.dataset_keywords", "collection data")
     def test_classify_respects_custom_keywords(self):
         """Classification should use custom keyword config."""
-        result = interceptor.classify_notification_type(
-            body="A new collection was created"
-        )
+        result = interceptor.classify_notification_type(body="A new collection was created")
         assert result == "dataset"
 
-    @pytest.mark.ckan_config(
-        "ckanext.notifications.dataset_endpoint_startswith", "data"
-    )
+    @pytest.mark.ckan_config("ckanext.notifications.dataset_endpoint_startswith", "data")
     def test_classify_respects_custom_endpoint_config(self):
         """Classification should use custom endpoint config."""
         result = interceptor.classify_notification_type(endpoint="data_show")
@@ -191,7 +177,7 @@ class TestNotificationCreation:
         """Created notifications should have timestamps."""
         user = factories.User()
 
-        before_create = datetime.utcnow()
+        before_create = datetime.now(tz=timezone.utc)
         interceptor.create_notification_record(
             user_id=user["id"],
             notification_type="system",
@@ -199,13 +185,9 @@ class TestNotificationCreation:
             subject="Test",
             body="Test",
         )
-        after_create = datetime.utcnow()
+        after_create = datetime.now(tz=timezone.utc)
 
-        notification = (
-            model.Session.query(Notification)
-            .filter(Notification.user_id == user["id"])  # type: ignore
-            .first()
-        )
+        notification = model.Session.query(Notification).filter(Notification.user_id == user["id"]).first()
 
         assert notification.created_at is not None  # type: ignore
         assert before_create <= notification.created_at <= after_create  # type: ignore
@@ -227,7 +209,7 @@ class TestNotificationCleanup:
             subject="Old",
             body="Old notification",
         )
-        old_notif.created_at = datetime.utcnow() - timedelta(days=91)  # type: ignore
+        old_notif.created_at = datetime.now(tz=timezone.utc) - timedelta(days=91)  # type: ignore
         model.Session.add(old_notif)
 
         # Create a new notification
@@ -242,7 +224,7 @@ class TestNotificationCleanup:
         model.Session.commit()
 
         # Run cleanup with default 90 days
-        interceptor._cleanup_notifications_for_user(user["id"])
+        interceptor.cleanup_notifications_for_user(user["id"])
 
         remaining = (
             model.Session.query(Notification)
@@ -266,12 +248,12 @@ class TestNotificationCleanup:
             source="email",
             subject="Old",
             body="Old",
-            created_at=datetime.utcnow() - timedelta(days=365),  # type: ignore
+            created_at=datetime.now(tz=timezone.utc) - timedelta(days=365),  # type: ignore
         )
         model.Session.add(old_notif)
         model.Session.commit()
 
-        interceptor._cleanup_notifications_for_user(user["id"])
+        interceptor.cleanup_notifications_for_user(user["id"])
 
         remaining = (
             model.Session.query(Notification)
@@ -295,7 +277,7 @@ class TestNotificationCleanup:
                 subject=f"Notif {i}",
                 body=f"Body {i}",
             )
-            notif.created_at = datetime.utcnow() - timedelta(seconds=15 - i)  # type: ignore
+            notif.created_at = datetime.now(tz=timezone.utc) - timedelta(seconds=15 - i)  # type: ignore
             model.Session.add(notif)
         model.Session.commit()
 
@@ -304,7 +286,7 @@ class TestNotificationCleanup:
             "ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user",
             return_value=10,
         ):
-            interceptor._cleanup_notifications_for_user(user["id"])
+            interceptor.cleanup_notifications_for_user(user["id"])
 
         remaining = (
             model.Session.query(Notification)
@@ -328,7 +310,7 @@ class TestNotificationCleanup:
                 subject=f"Notif {i}",
                 body=f"Body {i}",
             )
-            notif.created_at = datetime.utcnow() - timedelta(seconds=5 - i)  # type: ignore
+            notif.created_at = datetime.now(tz=timezone.utc) - timedelta(seconds=5 - i)  # type: ignore
             model.Session.add(notif)
         model.Session.commit()
 
@@ -336,7 +318,7 @@ class TestNotificationCleanup:
             "ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user",
             return_value=3,
         ):
-            interceptor._cleanup_notifications_for_user(user["id"])
+            interceptor.cleanup_notifications_for_user(user["id"])
 
         remaining = (
             model.Session.query(Notification)
@@ -399,11 +381,7 @@ class TestEmailInterception:
                 body="Email content",
             )
 
-        notification = (
-            model.Session.query(Notification)
-            .filter(Notification.user_id == user["id"])
-            .first()
-        )
+        notification = model.Session.query(Notification).filter(Notification.user_id == user["id"]).first()
 
         assert notification is not None
         assert notification.source == "email"

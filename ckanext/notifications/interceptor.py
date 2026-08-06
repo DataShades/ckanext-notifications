@@ -1,7 +1,7 @@
 import html
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, cast
 
@@ -27,22 +27,22 @@ URL_PATTERN = re.compile(r'https?://[^\s<>"\']+', flags=re.IGNORECASE)
 _original_mail_recipient = None
 
 
-def _should_intercept_notification(user_id, notification_type):
+def _should_intercept_notification(user_id: str, notification_type: str) -> bool:
     """Check if a notification should be intercepted for a user.
 
     When global_enabled=True, only system messages are intercepted.
     When mandatory_enabled=False, system notifications are never intercepted.
     """
     try:
-        GLOBAL_SCOPE_ID = "__global__"
-        MANDATORY_SYSTEM_SCOPE_ID = "__system_mandatory__"
+        global_scope_id = "__global__"
+        mandatory_system_scope_id = "__system_mandatory__"
 
         pref = (
             model.Session.query(NotificationPreference)
             .filter(
                 NotificationPreference.user_id == user_id,
                 NotificationPreference.scope_type == "global",
-                NotificationPreference.scope_id == GLOBAL_SCOPE_ID,
+                NotificationPreference.scope_id == global_scope_id,
             )
             .first()
         )
@@ -52,7 +52,7 @@ def _should_intercept_notification(user_id, notification_type):
             .filter(
                 NotificationPreference.user_id == user_id,
                 NotificationPreference.scope_type == "global",
-                NotificationPreference.scope_id == MANDATORY_SYSTEM_SCOPE_ID,
+                NotificationPreference.scope_id == mandatory_system_scope_id,
             )
             .first()
         )
@@ -63,17 +63,18 @@ def _should_intercept_notification(user_id, notification_type):
         # If user has global enabled, only intercept system-type notifications
         if pref and pref.enabled:
             return notification_type == "system"
-
-        # If global is disabled or not set, intercept all messages
-        return True
-    except Exception as e:
-        log.error(f"Error checking global notification preference: {str(e)}")
+    except Exception:
+        log.exception("Error checking global notification preference")
         # Default to allowing interception on error
         return True
+    else:
+        # If global is disabled or not set, intercept all messages
+        return True
 
 
-def _format_email_body_for_notification(body, body_html):
+def _format_email_body_for_notification(body: str, body_html: str):
     """Return HTML content suitable for notification rendering.
+
     - Use existing HTML email body when available.
     - Otherwise escape text, linkify plain URLs and preserve line breaks.
     """
@@ -109,13 +110,13 @@ def _format_email_body_for_notification(body, body_html):
     return "".join(chunks).replace("\n", "<br>")
 
 
-def _cleanup_notifications_for_user(user_id):
+def cleanup_notifications_for_user(user_id: str):
     """Enforces retention policies by deleting old notifications and limiting total count per user."""
     max_notifications = config.notifications_get_max_notifications_per_user()
     cleanup_days = config.notifications_get_cleanup_days()
 
     if cleanup_days > 0:
-        cutoff = datetime.utcnow() - timedelta(days=cleanup_days)
+        cutoff = datetime.now(tz=timezone.utc) - timedelta(days=cleanup_days)
         model.Session.query(Notification).filter(
             NotificationModel.user_id == user_id, NotificationModel.created_at < cutoff
         ).delete(synchronize_session=False)
@@ -132,7 +133,7 @@ def _cleanup_notifications_for_user(user_id):
             model.Session.query(Notification).filter(NotificationModel.id.in_(excess_ids)).delete(synchronize_session=False)
 
 
-def create_notification_record(user_id, notification_type, source, subject, body):
+def create_notification_record(user_id: str, notification_type: str, source: str, subject: str, body: str):
     """Safely writes an intercepted notification item to the database."""
     try:
         # Open an isolated session or use the contextual model.Session
@@ -145,14 +146,14 @@ def create_notification_record(user_id, notification_type, source, subject, body
             body=body,
         )
         session.add(notification)
-        _cleanup_notifications_for_user(user_id)
+        cleanup_notifications_for_user(user_id)
         session.commit()
-    except Exception as e:
-        log.error(f"Failed to save intercepted notification to DB: {str(e)}")
+    except Exception:
+        log.exception("Failed to save intercepted notification to DB")
         model.Session.rollback()
 
 
-def _classify_from_endpoint(endpoint):
+def _classify_from_endpoint(endpoint: str | None) -> str | None:
     """Infers the notification type based on the CKAN request endpoint."""
     if not endpoint:
         return None
@@ -164,7 +165,7 @@ def _classify_from_endpoint(endpoint):
 
     endpoint_lc = str(endpoint).lower()
 
-    if endpoint_lc.startswith(dataset_endpoint_prefix) or endpoint_lc.startswith(resource_endpoint_prefix):
+    if endpoint_lc.startswith((dataset_endpoint_prefix, resource_endpoint_prefix)):
         return "dataset"
 
     if endpoint_lc.startswith(organization_endpoint_prefix):
@@ -176,7 +177,7 @@ def _classify_from_endpoint(endpoint):
     return None
 
 
-def _classify_from_text(*parts):
+def _classify_from_text(*parts: str) -> str | None:
     """Infers the notification type by scanning subject and body text for keywords."""
     text = " ".join(str(part).lower() for part in parts if part)
     if not text:
@@ -198,7 +199,7 @@ def _classify_from_text(*parts):
     return None
 
 
-def classify_notification_type(subject="", body="", endpoint=None):
+def classify_notification_type(subject: str = "", body: str = "", endpoint: str | None = None):
     """Determines the notification type based on endpoint and text content."""
     endpoint_type = _classify_from_endpoint(endpoint)
     if endpoint_type:
@@ -213,6 +214,7 @@ def classify_notification_type(subject="", body="", endpoint=None):
 
 def patch_ckan_flash():
     """Wraps flask.flash and ckan.lib.helpers.flash to intercept all flash messages.
+
     Extracts the message content and category to store them as notifications.
     """
     # Prevent double-patching if the extension reloads
@@ -222,7 +224,7 @@ def patch_ckan_flash():
     original_flash = flask.flash
 
     @wraps(original_flash)
-    def patched_flash(message, category="message", *args, **kwargs):
+    def patched_flash(message: str, category: str = "message", *args, **kwargs):
         # Invoke the original flash function so functionality doesn't break
         result = original_flash(message, category=category, *args, **kwargs)
 
@@ -252,7 +254,9 @@ def patch_ckan_flash():
 
                 if not _should_intercept_notification(user.id, notification_type):
                     log.debug(
-                        f"Flash message skipped (global enabled, non-system type): user={user.id}, type={notification_type}"
+                        "Flash message skipped (global enabled, non-system type): user=%s, type=%s",
+                        user.id,
+                        notification_type,
                     )
                     return result
 
@@ -264,14 +268,17 @@ def patch_ckan_flash():
                     body=message_text,
                 )
                 log.debug(
-                    f"Flash message intercepted for user {user.id}: "
-                    f"category={category}, endpoint={endpoint}, type={notification_type}"
+                    "Flash message intercepted for user %s category=%s, endpoint=%s, type=%s",
+                    user.id,
+                    category,
+                    endpoint,
+                    notification_type,
                 )
             else:
-                log.debug(f"Flash message intercepted but no user context: {message}")
+                log.debug("Flash message intercepted but no user context: %s", message)
 
-        except Exception as e:
-            log.error(f"Error intercepting flash message: {str(e)}", exc_info=True)
+        except Exception:
+            log.exception("Error intercepting flash message")
 
         return result
 
@@ -304,7 +311,15 @@ def patch_ckan_mailer():
     _original_mail_recipient = original_mail_recipient
 
     @wraps(original_mail_recipient)
-    def patched_mail_recipient(recipient_name, recipient_email, subject, body, body_html=None, *args, **kwargs):
+    def patched_mail_recipient(
+        recipient_name: str,
+        recipient_email: str,
+        subject: str,
+        body: str,
+        body_html: str | None = None,
+        *args,
+        **kwargs,
+    ):
         # Invoke the original mailing process so functionality doesn't break
         result = original_mail_recipient(
             recipient_name,
@@ -345,8 +360,8 @@ def patch_ckan_mailer():
                     subject=subject,
                     body=formatted_body,
                 )
-        except Exception as e:
-            log.error("Error intercepting mail delivery: %s", e)
+        except Exception:
+            log.exception("Error intercepting mail delivery")
 
         return result
 
@@ -355,7 +370,7 @@ def patch_ckan_mailer():
     log.info("Successfully patched CKAN mailer for notification monitoring.")
 
 
-def intercept_activity(activity_dict: dict[str, Any]):
+def intercept_activity(activity_dict: dict[str, Any]):  # noqa: C901 PLR0911 PLR0912 PLR0915
     """Intercept activity stream events and create notifications for impacted users."""
     activity_type = activity_dict.get("activity_type", "")
     object_id = activity_dict.get("object_id")

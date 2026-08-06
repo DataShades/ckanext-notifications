@@ -57,11 +57,7 @@ class DashboardView(MethodView):
 
     def _apply_bulk_action(self, context: Context, user_obj: model.User) -> None:
         action_type_values = request.form.getlist("action_type")
-        action_type = (
-            action_type_values[-1]
-            if action_type_values
-            else request.form.get("bulk_action_type")
-        )
+        action_type = action_type_values[-1] if action_type_values else request.form.get("bulk_action_type")
         selected_ids = request.form.getlist("notification_ids")
 
         try:
@@ -76,9 +72,7 @@ class DashboardView(MethodView):
                         },
                     )
             elif action_type in ["mark_all_read", "delete_all"]:
-                tk.get_action("notification_global_action")(
-                    context, {"user_id": user_obj.id, "action_type": action_type}
-                )
+                tk.get_action("notification_global_action")(context, {"user_id": user_obj.id, "action_type": action_type})
         except Exception:
             log.exception("Failed to execute UI bulk action request.")
 
@@ -90,18 +84,10 @@ class DashboardView(MethodView):
             "page": request.form.get("page", 1),
             "limit": request.form.get("limit", 20),
         }
-        redirect_params = {
-            key: value
-            for key, value in redirect_params.items()
-            if value not in (None, "")
-        }
-        return redirect(
-            tk.url_for("notifications.dashboard", user_id=user_id, **redirect_params)
-        )
+        redirect_params = {key: value for key, value in redirect_params.items() if value not in (None, "")}
+        return redirect(tk.url_for("notifications.dashboard", user_id=user_id, **redirect_params))
 
-    def _fetch_notifications_page(
-        self, context: Context, user_obj: model.User
-    ) -> tuple[Page, str, str, int]:
+    def _fetch_notifications_page(self, context: Context, user_obj: model.User) -> tuple[Page, str, str, int]:
         filter_type = request.args.get("type", "")
         sort_order = request.args.get("sort", "desc")
         default_limit = notifications_get_notifications_per_page()
@@ -120,9 +106,7 @@ class DashboardView(MethodView):
             action_params["notification_type"] = filter_type
 
         try:
-            notifications_page = tk.get_action("notification_list")(
-                context, action_params
-            )
+            notifications_page = tk.get_action("notification_list")(context, action_params)
         except tk.ValidationError:
             log.exception("Failed to fetch notifications list for a user.")
             notifications_page = Page([], page=page, items_per_page=limit)
@@ -134,9 +118,7 @@ class DashboardView(MethodView):
         user_obj = _get_user_or_404(user_id)
         self._check_access(context, user_obj)
 
-        notifications_page, filter_type, sort_order, limit = (
-            self._fetch_notifications_page(context, user_obj)
-        )
+        notifications_page, filter_type, sort_order, limit = self._fetch_notifications_page(context, user_obj)
 
         return render_template(
             "notifications/dashboard.html",
@@ -165,15 +147,11 @@ class DashboardView(MethodView):
 class PreferencesView(MethodView):
     def _check_access(self, context: Context, user_obj: model.User) -> None:
         try:
-            tk.check_access(
-                "notification_preferences_show_auth", context, {"user_id": user_obj.id}
-            )
+            tk.check_access("notification_preferences_show_auth", context, {"user_id": user_obj.id})
         except tk.NotAuthorized:
             tk.abort(
                 403,
-                tk._(
-                    "You are not authorized to manage these notification preferences."
-                ),
+                tk._("You are not authorized to manage these notification preferences."),
             )
 
     def _build_organizations_payload(
@@ -186,14 +164,9 @@ class PreferencesView(MethodView):
             organizations_payload.append(
                 {
                     "id": org_id,
-                    "enabled": (
-                        _is_checked(request.form, f"org_enabled__{org_id}")
-                        or org_id in org_has_enabled_dataset
-                    ),
+                    "enabled": (_is_checked(request.form, f"org_enabled__{org_id}") or org_id in org_has_enabled_dataset),
                     "email_enabled": _is_checked(request.form, f"org_email__{org_id}"),
-                    "in_app_enabled": _is_checked(
-                        request.form, f"org_in_app__{org_id}"
-                    ),
+                    "in_app_enabled": _is_checked(request.form, f"org_in_app__{org_id}"),
                 }
             )
         return organizations_payload
@@ -209,8 +182,7 @@ class PreferencesView(MethodView):
                 {
                     "id": org_id,
                     "enabled": (
-                        _is_checked(request.form, f"dataset_org_enabled__{org_id}")
-                        or org_id in org_has_enabled_dataset
+                        _is_checked(request.form, f"dataset_org_enabled__{org_id}") or org_id in org_has_enabled_dataset
                     ),
                 }
             )
@@ -230,15 +202,9 @@ class PreferencesView(MethodView):
                 datasets_payload.append(
                     {
                         "id": dataset_id,
-                        "enabled": _is_checked(
-                            request.form, f"dataset_enabled__{dataset_id}"
-                        ),
-                        "email_enabled": _is_checked(
-                            request.form, f"dataset_email__{dataset_id}"
-                        ),
-                        "in_app_enabled": _is_checked(
-                            request.form, f"dataset_in_app__{dataset_id}"
-                        ),
+                        "enabled": _is_checked(request.form, f"dataset_enabled__{dataset_id}"),
+                        "email_enabled": _is_checked(request.form, f"dataset_email__{dataset_id}"),
+                        "in_app_enabled": _is_checked(request.form, f"dataset_in_app__{dataset_id}"),
                     }
                 )
 
@@ -262,9 +228,7 @@ class PreferencesView(MethodView):
         user_obj = _get_user_or_404(user_id)
         self._check_access(context, user_obj)
 
-        preferences_data = tk.get_action("notification_preferences_show")(
-            context, {"user_id": user_obj.id}
-        )
+        preferences_data = tk.get_action("notification_preferences_show")(context, {"user_id": user_obj.id})
         user_dict = tk.get_action("user_show")(context, {"id": user_obj.id})
 
         return render_template(
@@ -279,9 +243,7 @@ class PreferencesView(MethodView):
         user_obj = _get_user_or_404(user_id)
         self._check_access(context, user_obj)
 
-        existing = tk.get_action("notification_preferences_show")(
-            context, {"user_id": user_obj.id}
-        )
+        existing = tk.get_action("notification_preferences_show")(context, {"user_id": user_obj.id})
         org_has_enabled_dataset = self._get_org_has_enabled_dataset(existing)
 
         tk.get_action("notification_preferences_update")(
@@ -294,12 +256,8 @@ class PreferencesView(MethodView):
                 "mandatory_system": {
                     "enabled": _is_checked(request.form, "mandatory_enabled"),
                 },
-                "organizations": self._build_organizations_payload(
-                    existing, org_has_enabled_dataset
-                ),
-                "dataset_organizations": self._build_dataset_organizations_payload(
-                    existing, org_has_enabled_dataset
-                ),
+                "organizations": self._build_organizations_payload(existing, org_has_enabled_dataset),
+                "dataset_organizations": self._build_dataset_organizations_payload(existing, org_has_enabled_dataset),
                 "datasets": self._build_datasets_payload(existing),
             },
         )

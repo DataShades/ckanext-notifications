@@ -28,7 +28,7 @@ def get_unread_count_for_current_user():
     try:
         return tk.get_action("notification_unread_count")(context, {"user_id": tk.g.userobj.id})
     except (KeyError, ValueError, TypeError) as e:
-        log.error("Failed to execute template helper unread count query: %s", e)
+        log.warning("Failed to execute template helper unread count query: %s", e)
         return 0
 
 

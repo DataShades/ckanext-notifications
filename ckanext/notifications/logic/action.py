@@ -6,6 +6,7 @@ from sqlalchemy import desc
 
 from ckan import model, types
 from ckan.lib.pagination import Page
+from ckan.logic import validate
 from ckan.plugins import toolkit as tk
 
 from ckanext.notifications.config import notifications_get_activity_interception
@@ -23,7 +24,7 @@ log = logging.getLogger(__name__)
 
 
 @tk.side_effect_free
-@tk.validate(schema.notification_list_schema)
+@validate(schema.notification_list_schema)
 def notification_list(context: types.Context, data_dict: types.DataDict) -> Page:
     """Retrieves a filtered, ordered, paginated list of notifications for a specific user.
 
@@ -67,7 +68,7 @@ def notification_list(context: types.Context, data_dict: types.DataDict) -> Page
     )
 
 
-@tk.validate(schema.notification_patch_schema)
+@validate(schema.notification_patch_schema)
 def notification_patch(context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     """Updates status properties ('is_read') or completely removes records.
 
@@ -94,7 +95,7 @@ def notification_patch(context: types.Context, data_dict: types.DataDict) -> typ
     return {"success": True, "count": len(notification_ids)}
 
 
-@tk.validate(schema.notification_global_action_schema)
+@validate(schema.notification_global_action_schema)
 def notification_global_action(context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     """Applies massive transformations targeting an entire collection scope.
 
@@ -119,7 +120,7 @@ def notification_global_action(context: types.Context, data_dict: types.DataDict
 
 
 @tk.side_effect_free
-@tk.validate(schema.notification_unread_count_schema)
+@validate(schema.notification_unread_count_schema)
 def notification_unread_count(context: types.Context, data_dict: types.DataDict) -> int:
     """Returns a simplified total integer count of unread items."""
     tk.check_access("notification_list_auth", context, data_dict)
@@ -190,7 +191,7 @@ def _get_or_create_preference(user_id: str, scope_type: str, scope_id: str, mand
 
 
 @tk.side_effect_free
-@tk.validate(schema.notification_preferences_show_schema)
+@validate(schema.notification_preferences_show_schema)
 def notification_preferences_show(context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     tk.check_access("notification_preferences_show_auth", context, data_dict)
 
@@ -301,7 +302,7 @@ def notification_preferences_show(context: types.Context, data_dict: types.DataD
     }
 
 
-@tk.validate(schema.notification_preferences_update_schema)
+@validate(schema.notification_preferences_update_schema)
 def notification_preferences_update(context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     tk.check_access("notification_preferences_update_auth", context, data_dict)
 
