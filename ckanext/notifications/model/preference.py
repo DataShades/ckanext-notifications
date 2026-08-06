@@ -9,10 +9,10 @@ from .base import Base
 
 
 class NotificationPreference(Base):
-    __tablename__ = 'notifications_preferences'
+    __tablename__ = "notifications_preferences"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(100), ForeignKey('user.id', ondelete='CASCADE'), nullable=False, index=True)
+    user_id = Column(String(100), ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # global / organization / dataset
     scope_type = Column(String(32), nullable=False, index=True)
@@ -32,6 +32,4 @@ class NotificationPreference(Base):
         onupdate=datetime.datetime.utcnow,
     )
 
-    __table_args__ = (
-        UniqueConstraint('user_id', 'scope_type', 'scope_id', name='uq_notifications_preferences_scope'),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "scope_type", "scope_id", name="uq_notifications_preferences_scope"),)

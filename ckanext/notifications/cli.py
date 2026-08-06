@@ -3,15 +3,13 @@ import click
 
 @click.group(short_help="notifications CLI.")
 def notifications():
-    """notifications CLI.
-    """
+    """Notifications CLI."""
 
 
 @notifications.command()
 @click.argument("name", default="notifications")
 def command(name):
-    """Docs.
-    """
+    """Docs."""
     click.echo(f"Hello, {name}!")
 
 
