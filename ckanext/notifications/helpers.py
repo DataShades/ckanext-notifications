@@ -1,10 +1,10 @@
 import logging
 
 from ckan import model
-from ckanext.notifications.config import notifications_get_activity_interception
-
 from ckan.plugins import toolkit as tk
 from ckan.types import Context
+
+from ckanext.notifications.config import notifications_get_activity_interception
 
 log = logging.getLogger(__name__)
 

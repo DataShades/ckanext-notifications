@@ -1,4 +1,6 @@
+import ckan.plugins.toolkit as tk
 from ckan import plugins
+
 from ckanext.notifications.cli import get_commands
 from ckanext.notifications.config import (
     notifications_get_email_interception,
@@ -8,8 +10,6 @@ from ckanext.notifications.helpers import get_helpers
 from ckanext.notifications.interceptor import patch_ckan_flash, patch_ckan_mailer
 from ckanext.notifications.logic.action import get_actions
 from ckanext.notifications.views import get_blueprints
-
-import ckan.plugins.toolkit as tk
 
 
 @tk.blanket.auth_functions

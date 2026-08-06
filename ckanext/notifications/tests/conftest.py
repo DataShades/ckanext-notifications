@@ -3,11 +3,12 @@
 This module provides common utilities used across test suites.
 """
 
-from ckan import model
-from ckanext.notifications.model import Notification
-
 import pytest
+
+from ckan import model
 from ckan.tests import factories
+
+from ckanext.notifications.model import Notification
 
 
 @pytest.fixture

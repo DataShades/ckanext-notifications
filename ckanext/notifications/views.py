@@ -1,12 +1,13 @@
 import logging
 
-from ckan import model
-from ckanext.notifications.config import notifications_get_notifications_per_page
+from flask import Blueprint, redirect, render_template, request
 
+from ckan import model
 from ckan.lib.pagination import Page
 from ckan.plugins import toolkit as tk
 from ckan.types import Context
-from flask import Blueprint, redirect, render_template, request
+
+from ckanext.notifications.config import notifications_get_notifications_per_page
 
 log = logging.getLogger(__name__)
 
@@ -61,9 +62,7 @@ def dashboard(user_id):
                         context, {"user_id": user_obj.id, "ids": selected_ids, "action_type": action_type}
                     )
             elif action_type in ["mark_all_read", "delete_all"]:
-                tk.get_action("notification_global_action")(
-                    context, {"user_id": user_obj.id, "action_type": action_type}
-                )
+                tk.get_action("notification_global_action")(context, {"user_id": user_obj.id, "action_type": action_type})
         except Exception as e:
             log.error(f"Failed to execute UI bulk action request: {str(e)}")
 
@@ -152,9 +151,7 @@ def preferences(user_id):
             organizations_payload.append(
                 {
                     "id": org_id,
-                    "enabled": (
-                        _is_checked(request.form, f"org_enabled__{org_id}") or org_id in org_has_enabled_dataset
-                    ),
+                    "enabled": (_is_checked(request.form, f"org_enabled__{org_id}") or org_id in org_has_enabled_dataset),
                     "email_enabled": _is_checked(request.form, f"org_email__{org_id}"),
                     "in_app_enabled": _is_checked(request.form, f"org_in_app__{org_id}"),
                 }

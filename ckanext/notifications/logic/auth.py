@@ -1,6 +1,5 @@
-from ckan import types
-
 import ckan.plugins.toolkit as tk
+from ckan import types
 
 
 def notification_list_auth(context: types.Context, data_dict: types.DataDict) -> types.AuthResult:

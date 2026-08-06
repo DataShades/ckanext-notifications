@@ -1,11 +1,13 @@
 from collections import defaultdict
 from typing import Any, cast
 
-from ckan import model
+from sqlalchemy import desc
 
+from ckan import model
 from ckan.lib.pagination import Page
 from ckan.plugins import toolkit as tk
 from ckan.types import Context
+
 from ckanext.notifications.config import (
     notifications_get_activity_interception,
     notifications_get_notifications_per_page,
@@ -13,7 +15,6 @@ from ckanext.notifications.config import (
 )
 from ckanext.notifications.interceptor import intercept_activity
 from ckanext.notifications.model import Notification, NotificationPreference
-from sqlalchemy import desc
 
 NotificationModel = cast(Any, Notification)
 NotificationPreferenceModel = cast(Any, NotificationPreference)
@@ -124,9 +125,7 @@ def notification_global_action(context, data_dict):
     if action_type == "delete_all":
         query.delete(synchronize_session=False)
     elif action_type == "mark_all_read":
-        query.filter(NotificationModel.is_read == False).update(
-            {NotificationModel.is_read: True}, synchronize_session=False
-        )
+        query.filter(NotificationModel.is_read == False).update({NotificationModel.is_read: True}, synchronize_session=False)
 
     model.Session.commit()
     return {"success": True}
@@ -324,10 +323,7 @@ def notification_preferences_show(context, data_dict):
                 "organization": {
                     "id": org_id,
                     "name": org.get("name") or org_id,
-                    "title": org.get("title")
-                    or org.get("display_name")
-                    or org.get("name")
-                    or tk._("Unknown organization"),
+                    "title": org.get("title") or org.get("display_name") or org.get("name") or tk._("Unknown organization"),
                 },
                 "organization_preference": org_pref,
                 "preference": dataset_org_pref,
@@ -423,8 +419,7 @@ def notification_preferences_update(context, data_dict):
 
 @tk.chained_action
 def activity_create(original_action, context, data_dict):
-    """Chained action that intercepts 'activity_create' executions for the notifications dashboard.
-    """
+    """Chained action that intercepts 'activity_create' executions for the notifications dashboard."""
     # Execute core function first to ensure data validation passes
     executed_activity = original_action(context, data_dict)
 

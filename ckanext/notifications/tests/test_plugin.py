@@ -6,9 +6,9 @@ configures properly, and applies patches as expected.
 
 from unittest.mock import patch
 
-import ckanext.notifications.plugin as plugin_module
-
 import pytest
+
+import ckanext.notifications.plugin as plugin_module
 
 
 @pytest.mark.ckan_config("ckan.plugins", "notifications")

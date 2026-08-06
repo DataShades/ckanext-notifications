@@ -4,9 +4,9 @@ Tests verify that all configuration settings are correctly read,
 have proper defaults, and handle type conversions appropriately.
 """
 
-from ckanext.notifications import config
-
 import pytest
+
+from ckanext.notifications import config
 
 
 @pytest.mark.ckan_config("ckan.plugins", "notifications")

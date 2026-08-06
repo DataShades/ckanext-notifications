@@ -5,16 +5,17 @@ from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, cast
 
-from ckan import model
-from ckanext.notifications import config
-from ckanext.notifications.model import Notification
-
 import flask
+from flask import has_request_context, session
+
+from ckan import model
 from ckan.common import g
 from ckan.lib import helpers as ckan_helpers
 from ckan.lib import mailer as ckan_mailer
 from ckan.plugins import toolkit as tk
-from flask import has_request_context, session
+
+from ckanext.notifications import config
+from ckanext.notifications.model import Notification
 
 log = logging.getLogger(__name__)
 NotificationModel = cast(Any, Notification)
@@ -129,9 +130,7 @@ def _cleanup_notifications_for_user(user_id):
         )
         excess_ids = [row[0] for row in excess_ids_query.all()]
         if excess_ids:
-            model.Session.query(Notification).filter(NotificationModel.id.in_(excess_ids)).delete(
-                synchronize_session=False
-            )
+            model.Session.query(Notification).filter(NotificationModel.id.in_(excess_ids)).delete(synchronize_session=False)
 
 
 def create_notification_record(user_id, notification_type, source, subject, body):
@@ -250,8 +249,7 @@ def patch_ckan_flash():
 
                 if not _should_intercept_notification(user.id, notification_type):
                     log.debug(
-                        f"Flash message skipped (global enabled, non-system type): "
-                        f"user={user.id}, type={notification_type}"
+                        f"Flash message skipped (global enabled, non-system type): user={user.id}, type={notification_type}"
                     )
                     return result
 
@@ -329,9 +327,7 @@ def patch_ckan_mailer():
                 )
 
                 if not _should_intercept_notification(user.id, notification_type):
-                    log.debug(
-                        f"Email skipped by notification preference rules: user={user.id}, type={notification_type}"
-                    )
+                    log.debug(f"Email skipped by notification preference rules: user={user.id}, type={notification_type}")
                     return result
 
                 create_notification_record(
@@ -448,9 +444,7 @@ def intercept_activity(activity_dict):
     if activity_type == "new package":
         package_org = model.Group.get(package.owner_org) if package else None
         package_org_name = package_org.display_name if package_org else ""
-        package_org_url = (
-            tk.url_for(f"{package_org.type}.read", id=package_org.name, _external=True) if package_org else ""
-        )
+        package_org_url = tk.url_for(f"{package_org.type}.read", id=package_org.name, _external=True) if package_org else ""
 
         body = (
             f"A new {entity_type} <a href='{entity_url}'>{html.escape(entity_name)}</a> was created "
@@ -466,9 +460,7 @@ def intercept_activity(activity_dict):
             # Use the original (unpatched) mailer to avoid re-intercepting this
             # email and creating a duplicate notification record.
             _mailer = _original_mail_recipient or ckan_mailer.mail_recipient
-            _mailer(
-                recipient_name=user.name, recipient_email=user.email or "", subject=subject, body=body, body_html=body
-            )
+            _mailer(recipient_name=user.name, recipient_email=user.email or "", subject=subject, body=body, body_html=body)
         except Exception as e:
             log.error(f"Failed to send activity email notification to {user.email}: {e}")
 

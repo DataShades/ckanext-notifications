@@ -35,9 +35,7 @@ def upgrade():
     )
 
     op.create_index("idx_notifications_preferences_user_id", "notifications_preferences", ["user_id"], unique=False)
-    op.create_index(
-        "idx_notifications_preferences_scope_type", "notifications_preferences", ["scope_type"], unique=False
-    )
+    op.create_index("idx_notifications_preferences_scope_type", "notifications_preferences", ["scope_type"], unique=False)
 
 
 def downgrade():

@@ -7,12 +7,13 @@ stored, and cleaned up according to configuration.
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
+import pytest
+
 from ckan import model
+from ckan.tests import factories
+
 from ckanext.notifications import interceptor
 from ckanext.notifications.model import Notification
-
-import pytest
-from ckan.tests import factories
 
 
 @pytest.mark.ckan_config("ckan.plugins", "notifications")
@@ -57,9 +58,7 @@ class TestNotificationClassification:
 
     def test_classify_from_keywords_organization(self):
         """Organization keywords should classify as organization."""
-        result = interceptor.classify_notification_type(
-            subject="Organization Changed", body="The organization was modified"
-        )
+        result = interceptor.classify_notification_type(subject="Organization Changed", body="The organization was modified")
         assert result == "organization"
 
     def test_classify_from_keywords_group(self):
@@ -268,9 +267,7 @@ class TestNotificationCleanup:
         model.Session.commit()
 
         # Cleanup with max of 10
-        with patch(
-            "ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user", return_value=10
-        ):
+        with patch("ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user", return_value=10):
             interceptor._cleanup_notifications_for_user(user["id"])
 
         remaining = (
@@ -295,9 +292,7 @@ class TestNotificationCleanup:
             model.Session.add(notif)
         model.Session.commit()
 
-        with patch(
-            "ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user", return_value=3
-        ):
+        with patch("ckanext.notifications.interceptor.config.notifications_get_max_notifications_per_user", return_value=3):
             interceptor._cleanup_notifications_for_user(user["id"])
 
         remaining = (

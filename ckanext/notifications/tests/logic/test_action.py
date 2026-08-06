@@ -6,12 +6,13 @@ filtering, sorting, and bulk operations.
 
 from datetime import datetime, timedelta
 
-from ckan import model
+import pytest
 
 import ckan.tests.helpers as test_helpers
-import pytest
+from ckan import model
 from ckan.plugins import toolkit as tk
 from ckan.tests import factories
+
 from ckanext.notifications.model import Notification
 
 
