@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 
 @tk.side_effect_free
 @validate(schema.notification_list_schema)
-def notification_list(context: types.Context, data_dict: types.DataDict) -> Page:
+def notification_list(context: types.Context, data_dict: types.DataDict) -> types.DataDict:
     """Retrieves a filtered, ordered, paginated list of notifications for a specific user.
 
     Supported filters in data_dict: 'notification_type', 'sort_order' (asc/desc),
@@ -58,15 +58,11 @@ def notification_list(context: types.Context, data_dict: types.DataDict) -> Page
     total_count = query.count()
     items = [n.dictize() for n in query.offset(offset).limit(limit).all()]
 
-    return Page(
-        items,
-        page=page,
-        items_per_page=limit,
-        item_count=total_count,
-        presliced_list=True,
-        user_id=user_id,
-    )
-
+    return {
+        "items": items,
+        "page": page,
+        "total_items": total_count,
+    }
 
 @validate(schema.notification_patch_schema)
 def notification_patch(context: types.Context, data_dict: types.DataDict) -> types.DataDict:

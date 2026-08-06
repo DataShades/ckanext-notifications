@@ -41,9 +41,9 @@ class TestNotificationListAction:
 
         result = test_helpers.call_action("notification_list", user_id=user["id"], limit=10, page=1)
 
-        assert len(result.items) == 10
-        assert result.page == 1
-        assert result.item_count == 25
+        assert len(result["items"]) == 10
+        assert result["page"] == 1
+        assert result["total_items"] == 25
 
     @pytest.mark.ckan_config("ckanext.notifications.notifications_per_page", 20)
     def test_notification_list_default_limit(self):
@@ -54,7 +54,7 @@ class TestNotificationListAction:
         result = test_helpers.call_action("notification_list", user_id=user["id"])
 
         # Should return items up to default limit
-        assert len(result.items) <= 25
+        assert len(result["items"]) <= 25
 
     def test_notification_list_pagination_page_2(self):
         """notification_list should handle pagination correctly."""
@@ -66,8 +66,8 @@ class TestNotificationListAction:
         page2 = test_helpers.call_action("notification_list", user_id=user["id"], limit=10, page=2)
 
         # Different notifications on each page
-        page1_ids = [n["id"] for n in page1.items]
-        page2_ids = [n["id"] for n in page2.items]
+        page1_ids = [n["id"] for n in page1["items"]]
+        page2_ids = [n["id"] for n in page2["items"]]
 
         assert len(set(page1_ids) & set(page2_ids)) == 0
 

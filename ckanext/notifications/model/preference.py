@@ -28,8 +28,8 @@ class NotificationPreference(Base):
     in_app_enabled = Column(Boolean, nullable=False, default=True)
     mandatory = Column(Boolean, nullable=False, default=False)
 
-    created_at = Column(DateTime, nullable=False, default=now)
-    updated_at = Column(DateTime, nullable=False, default=now, onupdate=now)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=now)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=now, onupdate=now)
 
     __table_args__ = (
         UniqueConstraint(

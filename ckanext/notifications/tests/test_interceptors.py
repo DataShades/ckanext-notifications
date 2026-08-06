@@ -329,7 +329,8 @@ class TestNotificationCleanup:
 
         # Should have 3, and they should be the most recent ones
         assert len(remaining) == 3
-        assert remaining[0].subject == "Notif 0"
+        assert remaining[0].subject == "Notif 4"
+        assert {n.subject for n in remaining} == {"Notif 2", "Notif 3", "Notif 4"}
 
 
 @pytest.mark.usefixtures("with_plugins", "clean_db")

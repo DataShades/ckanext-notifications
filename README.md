@@ -332,7 +332,7 @@ Notifications are automatically classified into the following types:
 
 ### Notification List Action
 
-**Endpoint**: `POST /api/3/action/notification_list`
+**Endpoint**: `GET /api/3/action/notification_list`
 
 Retrieve a paginated list of notifications for a user.
 
@@ -411,7 +411,7 @@ Apply bulk actions to all notifications for a user.
 
 ### Get Unread Count
 
-**Endpoint**: `POST /api/3/action/notification_unread_count`
+**Endpoint**: `GET /api/3/action/notification_unread_count`
 
 Get the count of unread notifications for a user.
 

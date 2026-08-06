@@ -36,7 +36,7 @@ class Notification(Base):
     body = Column(Text, nullable=False)  # Stores the full text or HTML content
 
     is_read = Column(Boolean, default=False, nullable=False, index=True)
-    created_at = Column(DateTime, default=now, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=now, nullable=False, index=True)
 
     @classmethod
     def get(cls, notification_id: str) -> Notification | None:
