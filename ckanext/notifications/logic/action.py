@@ -5,7 +5,6 @@ from typing import Any, cast
 from sqlalchemy import desc
 
 from ckan import model, types
-from ckan.lib.pagination import Page
 from ckan.logic import validate
 from ckan.plugins import toolkit as tk
 
