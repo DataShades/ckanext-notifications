@@ -45,8 +45,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Organization and Dataset preferences interactions
   function syncDatasetChannels(datasetId, enabled) {
-    var email = document.querySelector('input[name="dataset_email__' + datasetId + '"]');
-    var inApp = document.querySelector('input[name="dataset_in_app__' + datasetId + '"]');
+    var email = document.querySelector('input[type="checkbox"][name="dataset_email__' + datasetId + '"]');
+    var inApp = document.querySelector('input[type="checkbox"][name="dataset_in_app__' + datasetId + '"]');
     if (email) {
       email.checked = enabled;
     }
@@ -56,9 +56,9 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   function syncDatasetToggleFromChannels(datasetId) {
-    var datasetToggle = document.querySelector('input[name="dataset_enabled__' + datasetId + '"]');
-    var email = document.querySelector('input[name="dataset_email__' + datasetId + '"]');
-    var inApp = document.querySelector('input[name="dataset_in_app__' + datasetId + '"]');
+    var datasetToggle = document.querySelector('input[type="checkbox"][name="dataset_enabled__' + datasetId + '"]');
+    var email = document.querySelector('input[type="checkbox"][name="dataset_email__' + datasetId + '"]');
+    var inApp = document.querySelector('input[type="checkbox"][name="dataset_in_app__' + datasetId + '"]');
     if (!datasetToggle || !email || !inApp) {
       return;
     }
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
 
-    var orgToggle = document.querySelector('#notifications-organization-preferences input[name="org_enabled__' + orgId + '"]');
+    var orgToggle = document.querySelector('#notifications-organization-preferences input[type="checkbox"][name="org_enabled__' + orgId + '"]');
     if (!orgToggle || orgToggle.checked) {
       return;
     }
@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
 
-    var datasetToggles = datasetCard.querySelectorAll('input[name^="dataset_enabled__"]');
+    var datasetToggles = datasetCard.querySelectorAll('input[type="checkbox"][name^="dataset_enabled__"]');
     var anyEnabled = false;
     datasetToggles.forEach(function(toggle) {
       if (toggle.checked) {
@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
-  var datasetEnabled = document.querySelectorAll('input[name^="dataset_enabled__"]');
+  var datasetEnabled = document.querySelectorAll('input[type="checkbox"][name^="dataset_enabled__"]');
   datasetEnabled.forEach(function(toggle) {
     toggle.addEventListener('change', function() {
       var datasetId = toggle.name.replace('dataset_enabled__', '');
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
 
-  var datasetChannelInputs = document.querySelectorAll('input[name^="dataset_email__"], input[name^="dataset_in_app__"]');
+  var datasetChannelInputs = document.querySelectorAll('input[type="checkbox"][name^="dataset_email__"], input[type="checkbox"][name^="dataset_in_app__"]');
   datasetChannelInputs.forEach(function(channelInput) {
     channelInput.addEventListener('change', function() {
       var datasetId = channelInput.name
@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .replace('dataset_in_app__', '');
       syncDatasetToggleFromChannels(datasetId);
 
-      var datasetToggle = document.querySelector('input[name="dataset_enabled__' + datasetId + '"]');
+      var datasetToggle = document.querySelector('input[type="checkbox"][name="dataset_enabled__' + datasetId + '"]');
       if (datasetToggle) {
         var datasetItem = datasetToggle.closest('.notifications-dataset-item');
         var orgId = datasetItem && datasetItem.getAttribute('data-org-id');
@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
       }
 
-      var datasetToggles = card.querySelectorAll('input[name^="dataset_enabled__"]');
+      var datasetToggles = card.querySelectorAll('input[type="checkbox"][name^="dataset_enabled__"]');
       datasetToggles.forEach(function(datasetToggle) {
         datasetToggle.checked = bulkToggle.checked;
         var datasetId = datasetToggle.name.replace('dataset_enabled__', '');
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
 
-  var orgPreferencesEnabled = document.querySelectorAll('#notifications-organization-preferences input[name^="org_enabled__"]');
+  var orgPreferencesEnabled = document.querySelectorAll('#notifications-organization-preferences input[type="checkbox"][name^="org_enabled__"]');
 
   function setDatasetCardState(datasetCard, enabled, clearWhenDisabling) {
     if (!datasetCard) {
@@ -170,8 +170,8 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     var datasetBulkToggle = datasetCard.querySelector('.dataset-org-bulk-toggle');
-    var datasetEnabledInputs = datasetCard.querySelectorAll('input[name^="dataset_enabled__"]');
-    var datasetChannels = datasetCard.querySelectorAll('input[name^="dataset_email__"], input[name^="dataset_in_app__"]');
+    var datasetEnabledInputs = datasetCard.querySelectorAll('input[type="checkbox"][name^="dataset_enabled__"]');
+    var datasetChannels = datasetCard.querySelectorAll('input[type="checkbox"][name^="dataset_email__"], input[type="checkbox"][name^="dataset_in_app__"]');
     var datasetPresence = datasetCard.querySelectorAll('.dataset-present-input');
 
     if (enabled) {
@@ -211,8 +211,8 @@ document.addEventListener("DOMContentLoaded", function() {
   orgPreferencesEnabled.forEach(function(orgToggle) {
     orgToggle.addEventListener('change', function() {
       var orgId = orgToggle.name.replace('org_enabled__', '');
-      var email = document.querySelector('#notifications-organization-preferences input[name="org_email__' + orgId + '"]');
-      var inApp = document.querySelector('#notifications-organization-preferences input[name="org_in_app__' + orgId + '"]');
+      var email = document.querySelector('#notifications-organization-preferences input[type="checkbox"][name="org_email__' + orgId + '"]');
+      var inApp = document.querySelector('#notifications-organization-preferences input[type="checkbox"][name="org_in_app__' + orgId + '"]');
       var datasetCard = document.querySelector('#notifications-dataset-preferences .notifications-dataset-org-card[data-org-id="' + orgId + '"]');
 
       if (email) {
@@ -242,10 +242,51 @@ document.addEventListener("DOMContentLoaded", function() {
     syncDatasetOrgBulkFromDatasets(card.getAttribute('data-org-id'));
   });
 
+  // Generic preference-group synchronization:
+  // - parent switch OFF => all child channels OFF
+  // - any child channel ON => parent switch ON
+  // Works for current and future groups as long as template structure is:
+  // .notifications-pref-item with .notifications-switch and .notifications-pref-channels.
+  function bindGenericPreferenceGroups() {
+    var preferenceItems = document.querySelectorAll('.notifications-preferences-form .notifications-pref-item');
+
+    preferenceItems.forEach(function(item) {
+      var parentSwitch = item.querySelector('.notifications-pref-head .notifications-switch input[type="checkbox"]');
+      var channels = item.querySelectorAll('.notifications-pref-channels .notifications-channel-badge input[type="checkbox"]');
+
+      if (!parentSwitch || channels.length === 0) {
+        return;
+      }
+
+      function syncParentFromChannels() {
+        var hasCheckedChannel = Array.from(channels).some(function(channel) {
+          return channel.checked;
+        });
+        parentSwitch.checked = hasCheckedChannel;
+      }
+
+      parentSwitch.addEventListener('change', function() {
+        channels.forEach(function(channel) {
+          if (!channel.disabled) {
+            channel.checked = parentSwitch.checked;
+          }
+        });
+      });
+
+      channels.forEach(function(channel) {
+        channel.addEventListener('change', function() {
+          syncParentFromChannels();
+        });
+      });
+    });
+  }
+
+  bindGenericPreferenceGroups();
+
   // Turning on global notifications preference means opting out from all
   // other channels/scopes on this page.
   var preferencesForm = document.querySelector('.notifications-preferences-form');
-  var globalToggle = preferencesForm && preferencesForm.querySelector('input[name="global_enabled"]');
+  var globalToggle = preferencesForm && preferencesForm.querySelector('input[type="checkbox"][name="global_enabled"]');
 
   function getOtherPreferenceSwitches() {
     if (!preferencesForm) {

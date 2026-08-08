@@ -1,9 +1,10 @@
 import logging
 from typing import Any
 
-from flask import Blueprint, Response, redirect, render_template, request
+from flask import Blueprint, redirect, render_template, request
 from flask.views import MethodView
 from werkzeug.datastructures import ImmutableMultiDict
+from werkzeug.wrappers import Response
 
 from ckan import model
 from ckan.lib.pagination import Page
@@ -121,14 +122,20 @@ class DashboardView(MethodView):
 
         try:
             notifications = tk.get_action("notification_list")(context, action_params)
+
         except tk.ValidationError:
             log.exception("Failed to fetch notifications list for a user.")
             notifications_page = Page([], page=page, items_per_page=limit)
         else:
+            items = notifications.get("items", [])
+            total_items = notifications.get("total_items", 0)
+            current_page = notifications.get("page", page)
+
             notifications_page = Page(
-                notifications,
-                page=page,
+                items,
+                page=current_page,
                 items_per_page=limit,
+                item_count=total_items,
                 presliced_list=True,
             )
 
@@ -143,18 +150,20 @@ class DashboardView(MethodView):
             self._fetch_notifications_page(context, user_obj)
         )
 
+        extra_vars = {
+            "user_id": user_obj.id,
+            "user_dict": tk.get_action("user_show")(context, {"id": user_obj.id}),
+            "page": notifications_page,
+            "notifications": notifications_page.items,
+            "current_filter_type": filter_type,
+            "current_sort_order": sort_order,
+            "current_page": notifications_page.page,
+            "current_limit": limit,
+        }
+
         return render_template(
             "notifications/dashboard.html",
-            extra_vars={
-                "user_id": user_obj.id,
-                "user_dict": tk.get_action("user_show")(context, {"id": user_obj.id}),
-                "page": notifications_page,
-                "notifications": notifications_page.items,
-                "current_filter_type": filter_type,
-                "current_sort_order": sort_order,
-                "current_page": notifications_page.page,
-                "current_limit": limit,
-            },
+            **extra_vars,
         )
 
     def post(self, user_id: str) -> Response:

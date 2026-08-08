@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from typing import cast
+
 from ckan import types
 from ckan.logic.schema import validator_args
+from ckan.plugins import toolkit as tk
 
 from ckanext.notifications.config import (
     notifications_get_notifications_per_page,
@@ -76,18 +79,36 @@ def notification_preferences_show_schema(
     }
 
 
-@validator_args
-def notification_preferences_update_schema(
-    not_empty: types.Validator,
-    unicode_safe: types.Validator,
-    user_id_or_name_exists: types.Validator,
-    default: types.ValidatorFactory,
-) -> types.Schema:
+def notification_preferences_update_schema() -> types.Schema:
+    not_empty = cast(types.Validator, tk.get_validator("not_empty"))
+    unicode_safe = cast(types.Validator, tk.get_validator("unicode_safe"))
+    user_id_or_name_exists = cast(
+        types.Validator, tk.get_validator("user_id_or_name_exists")
+    )
+    ignore_missing = cast(types.Validator, tk.get_validator("ignore_missing"))
+    boolean_validator = cast(
+        types.Validator, tk.get_validator("boolean_validator")
+    )
+    default = cast(types.ValidatorFactory, tk.get_validator("default"))
+
     return {
         "user_id": [not_empty, unicode_safe, user_id_or_name_exists],
         "global_settings": [default({})],
         "mandatory_system": [default({})],
-        "organizations": [default([])],
-        "dataset_organizations": [default([])],
-        "datasets": [default([])],
+        "organizations": {
+            "id": [ignore_missing, unicode_safe],
+            "enabled": [ignore_missing, boolean_validator],
+            "email_enabled": [ignore_missing, boolean_validator],
+            "in_app_enabled": [ignore_missing, boolean_validator],
+        },
+        "dataset_organizations": {
+            "id": [ignore_missing, unicode_safe],
+            "enabled": [ignore_missing, boolean_validator],
+        },
+        "datasets": {
+            "id": [ignore_missing, unicode_safe],
+            "enabled": [ignore_missing, boolean_validator],
+            "email_enabled": [ignore_missing, boolean_validator],
+            "in_app_enabled": [ignore_missing, boolean_validator],
+        },
     }

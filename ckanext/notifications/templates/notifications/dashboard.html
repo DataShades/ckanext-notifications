@@ -2,7 +2,7 @@
 
 {% block primary_content_inner %}
   {% block notifications_center_title %}
-    {% set unread_total = h.get_unread_notification_count() %}
+    {% set unread_total = h.get_unread_notification_count(user_id) %}
     <h1 class="notification-center-title">{{ _('Notification center') }} ({{ unread_total }})</h1>
   {% endblock %}
 

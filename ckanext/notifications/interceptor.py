@@ -24,7 +24,7 @@ URL_PATTERN = re.compile(r'https?://[^\s<>"\']+', flags=re.IGNORECASE)
 # Holds a reference to the original (unpatched) mailer so that emails sent
 # directly by intercept_activity bypass the patched version and avoid
 # creating duplicate notification records.
-_original_mail_recipient = None
+_MAILER_STATE: dict[str, Any] = {"original_mail_recipient": None}
 
 
 def _should_intercept_notification(user_id: str, notification_type: str) -> bool:
@@ -224,9 +224,9 @@ def patch_ckan_flash():
     original_flash = flask.flash
 
     @wraps(original_flash)
-    def patched_flash(message: str, category: str = "message", *args, **kwargs):
+    def patched_flash(message: str, category: str = "message", *args: Any, **kwargs: Any):
         # Invoke the original flash function so functionality doesn't break
-        result = original_flash(message, category=category, *args, **kwargs)
+        result = original_flash(message, category, *args, **kwargs)
 
         try:
             # Only intercept if we have a request context
@@ -301,14 +301,12 @@ def patch_ckan_mailer():
 
     Extracts the user ID, subject, and body to replicate them inside our DB.
     """
-    global _original_mail_recipient
-
     # Prevent double-patching if the extension reloads
     if getattr(ckan_mailer.mail_recipient, "_is_patched_by_ext", False):
         return
 
     original_mail_recipient = ckan_mailer.mail_recipient
-    _original_mail_recipient = original_mail_recipient
+    _MAILER_STATE["original_mail_recipient"] = original_mail_recipient
 
     @wraps(original_mail_recipient)
     def patched_mail_recipient(
@@ -317,8 +315,8 @@ def patch_ckan_mailer():
         subject: str,
         body: str,
         body_html: str | None = None,
-        *args,
-        **kwargs,
+        *args: Any,
+        **kwargs: Any,
     ):
         # Invoke the original mailing process so functionality doesn't break
         result = original_mail_recipient(
@@ -326,7 +324,7 @@ def patch_ckan_mailer():
             recipient_email,
             subject,
             body,
-            body_html=body_html,
+            body_html,
             *args,
             **kwargs,
         )
@@ -493,7 +491,7 @@ def intercept_activity(activity_dict: dict[str, Any]):  # noqa: C901 PLR0911 PLR
         try:
             # Use the original (unpatched) mailer to avoid re-intercepting this
             # email and creating a duplicate notification record.
-            _mailer = _original_mail_recipient or ckan_mailer.mail_recipient
+            _mailer = _MAILER_STATE["original_mail_recipient"] or ckan_mailer.mail_recipient
             _mailer(
                 recipient_name=user.name,
                 recipient_email=user.email or "",

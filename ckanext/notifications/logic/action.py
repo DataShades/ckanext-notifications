@@ -303,14 +303,14 @@ def notification_preferences_update(context: types.Context, data_dict: types.Dat
 
     user_id = data_dict["user_id"]
 
-    global_settings = data_dict["global_settings"]
+    global_settings = data_dict.get("global_settings", {})
     enabled = bool(global_settings.get("enabled", True))
     global_pref = _get_or_create_preference(user_id, "global", GLOBAL_SCOPE_ID)
     global_pref.enabled = enabled
     global_pref.email_enabled = enabled
     global_pref.in_app_enabled = enabled
 
-    mandatory_payload = data_dict["mandatory_system"]
+    mandatory_payload = data_dict.get("mandatory_system", {})
     mandatory_pref = _get_or_create_preference(
         user_id,
         "global",
@@ -326,7 +326,7 @@ def notification_preferences_update(context: types.Context, data_dict: types.Dat
         mandatory_pref.email_enabled = m_enabled
         mandatory_pref.in_app_enabled = m_enabled
 
-    for organization in data_dict["organizations"]:
+    for organization in data_dict.get("organizations", []):
         org_id = organization.get("id")
         if not org_id:
             continue
@@ -344,7 +344,7 @@ def notification_preferences_update(context: types.Context, data_dict: types.Dat
         org_pref.email_enabled = org_email_enabled
         org_pref.in_app_enabled = org_in_app_enabled
 
-    for dataset_org in data_dict["dataset_organizations"]:
+    for dataset_org in data_dict.get("dataset_organizations", []):
         org_id = dataset_org.get("id")
         if not org_id:
             continue
@@ -355,7 +355,7 @@ def notification_preferences_update(context: types.Context, data_dict: types.Dat
         org_pref.email_enabled = org_enabled
         org_pref.in_app_enabled = org_enabled
 
-    for dataset in data_dict["datasets"]:
+    for dataset in data_dict.get("datasets", []):
         dataset_id = dataset.get("id")
         if not dataset_id:
             continue
