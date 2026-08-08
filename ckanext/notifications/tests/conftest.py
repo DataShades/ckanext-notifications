@@ -32,7 +32,13 @@ def clean_db(reset_db, migrate_db_for):
         alembic_config.set_main_option("sqlalchemy.url", ckan_config["sqlalchemy.url"])
         command.upgrade(alembic_config, "head")
 
-    migrate_db_for("activity")
+    try:
+        migrate_db_for("activity")
+    except CommandError as err:
+        # On CKAN 2.10, activity may not expose a plugin migration repo.
+        # Core db init already creates activity tables, so this is safe to skip.
+        if "No 'script_location' key found in configuration" not in str(err):
+            raise
 
 
 @register(_name="user")
