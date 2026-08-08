@@ -21,7 +21,7 @@ A CKAN extension that provides a centralized notification center for users, inte
 ## Requirements
 
 - CKAN >= 2.10
-- Python >= 3.7
+- Python >= 3.10
 
 ### Compatibility with CKAN Versions
 
@@ -35,7 +35,7 @@ A CKAN extension that provides a centralized notification center for users, inte
 ### Prerequisites
 
 Before installing, ensure you have:
-- An active CKAN instance (version 2.9 or later)
+- An active CKAN instance (version 2.10 or later)
 - Access to your CKAN virtual environment
 - Appropriate file system permissions for the installation directory
 
@@ -312,7 +312,8 @@ The preferences page supports:
 
 When `ckanext.notifications.activity_interception = true`, intercepted activities are filtered by user preferences:
 
-- Organization-related activities are intercepted only when the target organization has at least one enabled channel (`Email` or `Notification center`).
+- Organization-related activities are intercepted only when the target organization has at least one enabled channel
+(`Email` or `Notification center`).
 - Dataset-related activities are intercepted only when the target dataset has at least one enabled channel.
 - New dataset creation activities are evaluated against the owning organization preferences.
 - For intercepted new dataset activities, the generated body includes dataset information and a direct dataset link.
@@ -429,7 +430,7 @@ Get the count of unread notifications for a user.
 
 - CKAN source code and virtual environment
 - Git
-- Python 3.7 or later
+- Python 3.10 or later
 - PostgreSQL (for development database)
 
 ### Setup Steps
@@ -703,4 +704,4 @@ This extension was developed to improve notification management in CKAN instance
 ---
 
 **Last Updated**: 2026
-**Tested with CKAN**: 2.9, 2.10, 2.11
+**Tested with CKAN**: 2.10, 2.11

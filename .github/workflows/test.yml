@@ -15,8 +15,8 @@ jobs:
           run: pip install flake8 pycodestyle
         - name: Check syntax
           run: flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics --extend-exclude ckan
-#        - name: Ruff Check
-#          run:  pip intall ruff && ruff --config pyproject.toml check ##We use an action hook but locally should be this command
+       - name: Ruff Check
+         run:  pip install ruff && ruff --config pyproject.toml check ##We use an action hook but locally should be this command
         - uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89 #v4.1.0
 
   test:

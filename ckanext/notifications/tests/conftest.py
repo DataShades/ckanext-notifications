@@ -1,9 +1,14 @@
+from pathlib import Path
 from typing import Any
 
 import pytest
+from alembic import command
+from alembic.config import Config
+from alembic.util.exc import CommandError
 from pytest_factoryboy import register
 
 from ckan import model
+from ckan.common import config as ckan_config
 from ckan.tests import factories
 
 from ckanext.notifications.model import Notification
@@ -13,7 +18,20 @@ from ckanext.notifications.model import Notification
 def clean_db(reset_db, migrate_db_for):
     reset_db()
 
-    migrate_db_for("notifications")
+    try:
+        migrate_db_for("notifications")
+    except CommandError as err:
+        # CKAN 2.10 may fail to resolve plugin migration config in some
+        # environments. Fall back to explicit alembic.ini path.
+        if "No 'script_location' key found in configuration" not in str(err):
+            raise
+
+        migration_dir = Path(__file__).resolve().parents[1] / "migration" / "notifications"
+        alembic_config = Config(str(migration_dir / "alembic.ini"))
+        alembic_config.set_main_option("script_location", str(migration_dir))
+        alembic_config.set_main_option("sqlalchemy.url", ckan_config["sqlalchemy.url"])
+        command.upgrade(alembic_config, "head")
+
     migrate_db_for("activity")
 
 
