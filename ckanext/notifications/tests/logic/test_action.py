@@ -358,6 +358,36 @@ class TestNotificationUnreadCountAction:
 
         assert result == 0
 
+    def test_notification_unread_count_allows_authenticated_user_by_user_id(self):
+        """notification_unread_count should authorize the current user via user_id."""
+        user = factories.User()
+
+        notif = Notification(
+            user_id=user["id"],
+            notification_type="system",
+            source="email",
+            subject="Notif",
+            body="Body",
+            is_read=False,
+        )
+        model.Session.add(notif)
+        model.Session.commit()
+
+        context = {
+            "model": model,
+            "session": model.Session,
+            "user": user["name"],
+            "auth_user_obj": model.User.get(user["id"]),
+        }
+
+        result = test_helpers.call_action(
+            "notification_unread_count",
+            context=context,
+            user_id=user["id"],
+        )
+
+        assert result == 1
+
     def test_notification_unread_count_requires_user_id(self):
         """notification_unread_count should require user_id."""
         with pytest.raises(tk.ValidationError):

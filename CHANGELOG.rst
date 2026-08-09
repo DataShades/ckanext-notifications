@@ -27,6 +27,11 @@ Fixed
 - Fixed multiple test failures across plugin/config/interceptor/action suites.
 - Improved test database migration resilience, including compatibility handling
   for CKAN 2.10 migration initialization.
+- Fixed notification authorization for requests that identify the target user
+  via ``user_id``, preventing unread-count lookups from failing with a missing
+  CKAN user ``id`` during auth checks.
+- Added regression coverage for authenticated ``notification_unread_count``
+  requests that authorize against the current user context.
 
 ***********
 1.1.0 - 2026-08-04
