@@ -1,4 +1,4 @@
-[![Tests](https://github.com/Datashades/ckanext-notifications/workflows/Tests/badge.svg?branch=main)](https://github.com/Datashades/ckanext-notifications/actions)
+[![Tests](https://github.com/DataShades/ckanext-notifications/actions/workflows/test.yml/badge.svg)](https://github.com/DataShades/ckanext-notifications/actions/workflows/test.yml)
 [![License](https://img.shields.io/badge/license-AGPL%203-blue.svg)](LICENSE)
 
 # ckanext-notifications
@@ -20,14 +20,13 @@ A CKAN extension that provides a centralized notification center for users, inte
 
 ## Requirements
 
-- CKAN >= 2.9
-- Python >= 3.7
+- CKAN >= 2.10
+- Python >= 3.10
 
 ### Compatibility with CKAN Versions
 
 | CKAN version | Status              | Notes                                                    |
 |--------------|---------------------|----------------------------------------------------------|
-| 2.9          | Tested              | Full compatibility                                       |
 | 2.10         | Tested              | Full compatibility                                       |
 | 2.11         | Fully Compatible    | Latest tested version with all features supported        |
 
@@ -36,7 +35,7 @@ A CKAN extension that provides a centralized notification center for users, inte
 ### Prerequisites
 
 Before installing, ensure you have:
-- An active CKAN instance (version 2.9 or later)
+- An active CKAN instance (version 2.10 or later)
 - Access to your CKAN virtual environment
 - Appropriate file system permissions for the installation directory
 
@@ -59,7 +58,6 @@ Before installing, ensure you have:
 
    ```bash
    pip install -e .
-   pip install -r requirements.txt
    ```
 
 4. **Add the plugin to your CKAN configuration**:
@@ -93,8 +91,8 @@ All configuration options are optional and use sensible defaults. Add these sett
 
 #### `ckanext.notifications.email_interception`
 
-**Type**: Boolean  
-**Default**: `true`  
+**Type**: Boolean
+**Default**: `true`
 **Description**: Enable or disable automatic interception and storage of email messages sent by CKAN.
 
 ```ini
@@ -104,8 +102,8 @@ ckanext.notifications.email_interception = false
 
 #### `ckanext.notifications.flash_interception`
 
-**Type**: Boolean  
-**Default**: `true`  
+**Type**: Boolean
+**Default**: `true`
 **Description**: Enable or disable automatic interception and storage of CKAN flash notifications.
 
 ```ini
@@ -115,8 +113,8 @@ ckanext.notifications.flash_interception = false
 
 #### `ckanext.notifications.activity_interception`
 
-**Type**: Boolean  
-**Default**: `false`  
+**Type**: Boolean
+**Default**: `false`
 **Description**: Enable or disable interception of CKAN activity stream events (used by `intercept_activity`). It is required to enable this to generate notifications based on CKAN activities and enable the additional functionality to Notification preferences related to organization and dataset notifications.
 
 ```ini
@@ -130,8 +128,8 @@ Notifications are automatically classified based on endpoint routing and keyword
 
 #### `ckanext.notifications.dataset_keywords`
 
-**Type**: Space-separated list  
-**Default**: `dataset package resource`  
+**Type**: Space-separated list
+**Default**: `dataset package resource`
 **Description**: Keywords used to identify dataset-related notifications when endpoint routing cannot determine the type.
 
 ```ini
@@ -141,8 +139,8 @@ ckanext.notifications.dataset_keywords = dataset package resource data publicati
 
 #### `ckanext.notifications.organization_keywords`
 
-**Type**: Space-separated list  
-**Default**: `organization organisation`  
+**Type**: Space-separated list
+**Default**: `organization organisation`
 **Description**: Keywords used to identify organization-related notifications.
 
 ```ini
@@ -151,8 +149,8 @@ ckanext.notifications.organization_keywords = organization organisation team age
 
 #### `ckanext.notifications.group_keywords`
 
-**Type**: Space-separated list  
-**Default**: `group`  
+**Type**: Space-separated list
+**Default**: `group`
 **Description**: Keywords used to identify group-related notifications.
 
 ```ini
@@ -165,8 +163,8 @@ Notifications can be classified based on CKAN API endpoints. Configure these pre
 
 #### `ckanext.notifications.dataset_endpoint_startswith`
 
-**Type**: String  
-**Default**: `dataset`  
+**Type**: String
+**Default**: `dataset`
 **Description**: Endpoint prefix for dataset notifications.
 
 ```ini
@@ -175,8 +173,8 @@ ckanext.notifications.dataset_endpoint_startswith = dataset
 
 #### `ckanext.notifications.resource_endpoint_startswith`
 
-**Type**: String  
-**Default**: `resource`  
+**Type**: String
+**Default**: `resource`
 **Description**: Endpoint prefix for resource (dataset file) notifications.
 
 ```ini
@@ -185,8 +183,8 @@ ckanext.notifications.resource_endpoint_startswith = resource
 
 #### `ckanext.notifications.organization_endpoint_startswith`
 
-**Type**: String  
-**Default**: `organization`  
+**Type**: String
+**Default**: `organization`
 **Description**: Endpoint prefix for organization notifications.
 
 ```ini
@@ -195,8 +193,8 @@ ckanext.notifications.organization_endpoint_startswith = organization
 
 #### `ckanext.notifications.group_endpoint_startswith`
 
-**Type**: String  
-**Default**: `group`  
+**Type**: String
+**Default**: `group`
 **Description**: Endpoint prefix for group notifications.
 
 ```ini
@@ -205,8 +203,8 @@ ckanext.notifications.group_endpoint_startswith = group
 
 #### `ckanext.notifications.organization_followee_list`
 
-**Type**: Boolean  
-**Default**: `false`  
+**Type**: Boolean
+**Default**: `false`
 **Description**: Controls which organizations are shown in notification preferences. When enabled, users manage preferences for organizations they follow. When disabled, users manage preferences for organizations where they are members.
 
 ```ini
@@ -218,9 +216,9 @@ ckanext.notifications.organization_followee_list = true
 
 #### `ckanext.notifications.notifications_per_page`
 
-**Type**: Integer  
-**Default**: `20`  
-**Constraints**: Must be greater than 0  
+**Type**: Integer
+**Default**: `20`
+**Constraints**: Must be greater than 0
 **Description**: Maximum number of notifications displayed per page in the dashboard.
 
 ```ini
@@ -230,8 +228,8 @@ ckanext.notifications.notifications_per_page = 50
 
 #### `ckanext.notifications.max_notifications_per_user`
 
-**Type**: Integer  
-**Default**: `1000`  
+**Type**: Integer
+**Default**: `1000`
 **Description**: Maximum number of notifications to store per user. Oldest notifications beyond this limit are automatically deleted.
 
 ```ini
@@ -241,8 +239,8 @@ ckanext.notifications.max_notifications_per_user = 5000
 
 #### `ckanext.notifications.cleanup_days`
 
-**Type**: Integer  
-**Default**: `90`  
+**Type**: Integer
+**Default**: `90`
 **Description**: Number of days to retain notifications before automatic deletion. Notifications older than this threshold are automatically removed.
 
 ```ini
@@ -314,7 +312,8 @@ The preferences page supports:
 
 When `ckanext.notifications.activity_interception = true`, intercepted activities are filtered by user preferences:
 
-- Organization-related activities are intercepted only when the target organization has at least one enabled channel (`Email` or `Notification center`).
+- Organization-related activities are intercepted only when the target organization has at least one enabled channel
+(`Email` or `Notification center`).
 - Dataset-related activities are intercepted only when the target dataset has at least one enabled channel.
 - New dataset creation activities are evaluated against the owning organization preferences.
 - For intercepted new dataset activities, the generated body includes dataset information and a direct dataset link.
@@ -334,7 +333,7 @@ Notifications are automatically classified into the following types:
 
 ### Notification List Action
 
-**Endpoint**: `POST /api/3/action/notification_list`
+**Endpoint**: `GET /api/3/action/notification_list`
 
 Retrieve a paginated list of notifications for a user.
 
@@ -413,7 +412,7 @@ Apply bulk actions to all notifications for a user.
 
 ### Get Unread Count
 
-**Endpoint**: `POST /api/3/action/notification_unread_count`
+**Endpoint**: `GET /api/3/action/notification_unread_count`
 
 Get the count of unread notifications for a user.
 
@@ -431,7 +430,7 @@ Get the count of unread notifications for a user.
 
 - CKAN source code and virtual environment
 - Git
-- Python 3.7 or later
+- Python 3.10 or later
 - PostgreSQL (for development database)
 
 ### Setup Steps
@@ -555,13 +554,13 @@ def test_notification_list_respects_per_page_config(app, user):
     """Test that notifications_per_page config is respected."""
     # Arrange
     notifications = factories.create_notifications(user, count=25)
-    
+
     # Act
     result = tk.get_action('notification_list')(
         {'user': user['id']},
         {'user_id': user['id'], 'limit': 10}
     )
-    
+
     # Assert
     assert len(result['items']) == 10
     assert result['total_items'] == 25
@@ -586,18 +585,18 @@ All functions should include descriptive docstrings following Google style:
 def classify_notification_type(subject='', body='', endpoint=None):
     """
     Determines the notification type based on endpoint and text content.
-    
+
     Prioritizes endpoint-based classification over text-based keyword matching
     for more accurate categorization.
-    
+
     Args:
         subject (str): Notification subject line. Defaults to empty string.
         body (str): Notification message body. Defaults to empty string.
         endpoint (str, optional): CKAN request endpoint name. Defaults to None.
-    
+
     Returns:
         str: Notification type ('dataset', 'organization', 'group', or 'system').
-    
+
     Example:
         >>> classify_notification_type(
         ...     subject='Dataset Updated',
@@ -650,7 +649,7 @@ def classify_notification_type(subject='', body='', endpoint=None):
 3. Increase `ckanext.notifications.notifications_per_page` to reduce queries
 4. Add a database index on notifications table:
    ```sql
-   CREATE INDEX idx_notifications_user_id_created_at 
+   CREATE INDEX idx_notifications_user_id_created_at
    ON notifications(user_id, created_at DESC);
    ```
 
@@ -704,5 +703,5 @@ This extension was developed to improve notification management in CKAN instance
 
 ---
 
-**Last Updated**: 2026  
-**Tested with CKAN**: 2.9, 2.10, 2.11
+**Last Updated**: 2026
+**Tested with CKAN**: 2.10, 2.11
