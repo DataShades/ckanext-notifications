@@ -281,7 +281,10 @@ def notification_preferences_show(context: types.Context, data_dict: types.DataD
                 "organization": {
                     "id": org_id,
                     "name": org.get("name") or org_id,
-                    "title": org.get("title") or org.get("display_name") or org.get("name") or tk._("Unknown organization"),
+                    "title": org.get("title")
+                    or org.get("display_name")
+                    or org.get("name")
+                    or tk._("Unknown organization"),
                 },
                 "organization_preference": org_pref,
                 "preference": dataset_org_pref,
@@ -382,7 +385,7 @@ def activity_create(original_action: types.Action, context: types.Context, data_
 
     if notifications_get_activity_interception():
         try:
-            intercept_activity(executed_activity)
+            intercept_activity(executed_activity, context)
         except Exception:
             log.exception("Failed to process activity logging")
 

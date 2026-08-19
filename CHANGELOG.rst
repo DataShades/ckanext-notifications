@@ -8,6 +8,16 @@ The format is based on `Keep a Changelog <http://keepachangelog.com>`_
 and this project adheres to `Semantic Versioning <http://semver.org/>`_.
 
 **********
+1.1.2 - 2026-08-19
+**********
+
+Fixed
+-----
+
+- Fixed a ``NotAuthorized`` error in activity stream processing by ensuring the
+  user context is passed for notification preference checks.
+
+**********
 1.1.1 - 2026-08-07
 **********
 

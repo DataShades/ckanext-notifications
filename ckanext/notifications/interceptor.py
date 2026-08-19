@@ -8,7 +8,7 @@ from typing import Any, cast
 import flask
 from flask import has_request_context, session
 
-from ckan import model
+from ckan import model, types
 from ckan.common import g
 from ckan.lib import helpers as ckan_helpers
 from ckan.lib import mailer as ckan_mailer
@@ -72,7 +72,7 @@ def _should_intercept_notification(user_id: str, notification_type: str) -> bool
         return True
 
 
-def _format_email_body_for_notification(body: str, body_html: str):
+def _format_email_body_for_notification(body: str, body_html: str | None):
     """Return HTML content suitable for notification rendering.
 
     - Use existing HTML email body when available.
@@ -367,14 +367,13 @@ def patch_ckan_mailer():
     ckan_mailer.mail_recipient = patched_mail_recipient
     log.info("Successfully patched CKAN mailer for notification monitoring.")
 
-
-def intercept_activity(activity_dict: dict[str, Any]):  # noqa: C901 PLR0911 PLR0912 PLR0915
+def intercept_activity(activity_dict: dict[str, Any], context: types.Context):  # noqa: C901 PLR0911 PLR0912 PLR0915
     """Intercept activity stream events and create notifications for impacted users."""
     activity_type = activity_dict.get("activity_type", "")
     object_id = activity_dict.get("object_id")
     user_id = activity_dict.get("user_id")
     package = model.Package.get(object_id) if activity_type == "new package" and object_id else None
-    preferences_data = tk.get_action("notification_preferences_show")({}, {"user_id": user_id})
+    preferences_data = tk.get_action("notification_preferences_show")(context, {"user_id": user_id})
     organizations = preferences_data.get("organizations", [])
     datasets = preferences_data.get("dataset_groups", [])
 
@@ -476,7 +475,10 @@ def intercept_activity(activity_dict: dict[str, Any]):  # noqa: C901 PLR0911 PLR
     if activity_type == "new package":
         package_org = model.Group.get(package.owner_org) if package else None
         package_org_name = package_org.display_name if package_org else ""
-        package_org_url = tk.url_for(f"{package_org.type}.read", id=package_org.name, _external=True) if package_org else ""
+        package_org_url = (
+            tk.url_for(f"{package_org.type}.read", id=package_org.name, _external=True)
+            if package_org else ""
+        )
 
         body = (
             f"A new {entity_type} <a href='{entity_url}'>{html.escape(entity_name)}</a> was created "
