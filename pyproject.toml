@@ -1,6 +1,6 @@
 [project]
 name = "ckanext-notifications"
-version = "1.1.2"
+version = "1.1.3"
 description = "Collect all user notifications and emails received from CKAN"
 readme = "README.md"
 authors = [

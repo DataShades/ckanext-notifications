@@ -8,6 +8,17 @@ The format is based on `Keep a Changelog <http://keepachangelog.com>`_
 and this project adheres to `Semantic Versioning <http://semver.org/>`_.
 
 **********
+1.1.3 - 2026-08-20
+**********
+
+Fixed
+-----
+
+- Fixed organization followee list handling after the refactor so notification
+  preferences correctly use the configured organization source and preserve
+  followee-based organization lookups without regressions.
+
+**********
 1.1.2 - 2026-08-19
 **********
 

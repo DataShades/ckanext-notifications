@@ -8,7 +8,10 @@ from ckan import model, types
 from ckan.logic import validate
 from ckan.plugins import toolkit as tk
 
-from ckanext.notifications.config import notifications_get_activity_interception
+from ckanext.notifications.config import (
+    notifications_get_activity_interception,
+    notifications_get_organization_followee_list,
+)
 from ckanext.notifications.interceptor import intercept_activity
 from ckanext.notifications.logic import schema
 from ckanext.notifications.model import Notification, NotificationPreference
@@ -191,34 +194,39 @@ def notification_preferences_show(context: types.Context, data_dict: types.DataD
     tk.check_access("notification_preferences_show_auth", context, data_dict)
 
     user_id = data_dict["user_id"]
-
-    organizations = tk.get_action("organization_list_for_user")(
-        types.Context(
-            model=model,
-            session=model.Session,
-            user=context.get("user", ""),
-            auth_user_obj=context.get("auth_user_obj"),
-        ),
-        {
-            "id": user_id,
-            "permission": "read",
-            "include_dataset_count": False,
-        },
+    action_context = types.Context(
+        model=model,
+        session=model.Session,
+        user=context.get("user", ""),
+        auth_user_obj=context.get("auth_user_obj"),
     )
+
+    if notifications_get_organization_followee_list():
+        organizations = tk.get_action('organization_followee_list')(
+            action_context,
+            {
+                'id': user_id,
+            },
+        )
+    else:
+        organizations = tk.get_action('organization_list_for_user')(
+            action_context,
+            {
+                'id': user_id,
+                'permission': 'read',
+                'include_dataset_count': False,
+            },
+        )
 
     followed_datasets: list[dict[str, Any]] = tk.get_action("dataset_followee_list")(
         types.Context(
-            model=model,
-            session=model.Session,
-            user=context.get("user", ""),
-            auth_user_obj=context.get("auth_user_obj"),
+            action_context,
             for_view=True,
             with_capacity=False,
         ),
         {"id": user_id},
     )
 
-    organization_map = {org["id"]: org for org in organizations}
     grouped_datasets: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
     for dataset in followed_datasets:
@@ -250,7 +258,13 @@ def notification_preferences_show(context: types.Context, data_dict: types.DataD
     dataset_groups = []
 
     for org_id, datasets in grouped_datasets.items():
-        org = organization_map.get(org_id, {})
+        org = tk.get_action("organization_show")(
+            action_context,
+            {
+                "id": org_id,
+                "include_datasets": False,
+            },
+        )
         org_pref = _serialize_preference(user_id, "organization", org_id)
         dataset_org_pref = _serialize_preference(user_id, "dataset_organization", org_id)
 
@@ -386,7 +400,7 @@ def activity_create(original_action: types.Action, context: types.Context, data_
     if notifications_get_activity_interception():
         try:
             intercept_activity(executed_activity, context)
-        except Exception:
+        except (OSError, ValueError, KeyError):
             log.exception("Failed to process activity logging")
 
     return executed_activity
